@@ -1,0 +1,32 @@
+﻿services:
+  rehi.apis:
+    image: rehi.apis
+    build:
+      context: .
+      dockerfile: Rehi.Apis/Dockerfile
+    ports:
+      - "5204:8080"
+      - "7021:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=rehi
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  seq:
+    image: datalust/seq:2024.3
+    container_name: seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "8081:80"
+      - "5341:5341"
+volumes:
+  pg_data:
