@@ -11,19 +11,22 @@ public class CreateArticleEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/articles", async ([FromBody] Request request, ISender sender) =>
+        app.MapPost("/articles/get-or-add", async ([FromBody] Request request, ISender sender) =>
             {
-                Result<Guid> result = await sender.Send(new CreateArticle.Command(request.Title, request.RawHtml));
+                var result = await sender.Send(new CreateArticle.Command(request.Id, request.Url,  request.RawHtml));
+                if (result.Value.IsSavedBefore)
+                {
+                    return result.MatchOk();
+                }
                 return result.MatchCreated(id => $"/articles/{id}");
             })
             .WithTags("Articles")
             .WithName("CreateArticle");
-        
-        app.MapGet("/article" , async () => "Hello");
     }
     internal sealed class Request
     {
-        public string Title { get; set; }
+        public Guid Id { get; set; }
+        public string Url { get; set; }
         public string RawHtml { get; set; }
     }
     

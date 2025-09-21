@@ -9,7 +9,18 @@ public class ArticleConfiguration : IEntityTypeConfiguration<Article>
     public void Configure(EntityTypeBuilder<Article> builder)
     {
         builder.HasKey(e => e.Id);
-        builder.Property(e => e.Title).IsRequired().HasMaxLength(256);
+        builder.Property(e => e.Title).HasMaxLength(256);
         builder.Property(e => e.RawHtml).IsRequired().HasColumnType("text");
+        builder.Property(e => e.Url).IsRequired().HasMaxLength(2048);
+        builder.Property(e => e.Author).HasMaxLength(128);
+        builder.Property(e => e.Summary).HasMaxLength(512);
+        builder.Property(e => e.ImageUrl).HasColumnType("text");
+        builder.Property(e => e.Content).HasColumnType("text");
+        builder.Property(e => e.TextContent).HasColumnType("text");
+        builder.Property(e => e.Language).HasMaxLength(16);
+        builder.Property(e => e.SaveUsing).HasMaxLength(64);
+        builder.Property(e => e.WordCount);
+        builder.Property(e => e.TimeToRead);
+        builder.Property(e => e.PublishDate);
     }
 }

@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.CurrentUser;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
@@ -9,32 +10,45 @@ namespace Rehi.Application.Articles.CreateArticle;
 
 public abstract class CreateArticle
 {
-    public record Command(string Title, string RawHtml): ICommand<Guid>;
-
+    public record Command(Guid Id, string Url, string RawHtml): ICommand<Response>;
     
-    internal class Handler(IDbContext dbContext) : ICommandHandler<Command, Guid>
+    public record Response(
+        Guid Id,
+        string Url,
+        bool IsSavedBefore
+    );
+    internal class Handler(IDbContext dbContext) : ICommandHandler<Command, Response>
     {
-        public async Task<Result<Guid>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<Result<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var articleExisted = await dbContext.Articles
+                .SingleOrDefaultAsync(a => a.Url == command.Url, cancellationToken);
+
+            if (articleExisted is not null)
+            {
+                return new Response(articleExisted.Id, articleExisted.Url, true);
+            }
+            
             var article = new Article()
             {
-                Id = Guid.NewGuid(),
-                Title = command.Title,
+                Id = command.Id,
+                Url = command.Url,
                 RawHtml = command.RawHtml
             };
             
-            article.Raise(new ArticleCreatedDomainEvent());
+            article.Raise(new ArticleCreatedDomainEvent(article.Id));
             dbContext.Articles.Add(article);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return Result.Success(article.Id);
+            return new Response(article.Id, article.Url, false);
         }
     }
     
     internal sealed class Validator : AbstractValidator<Command>
     {
         public Validator()
-        {
-           RuleFor(x => x.Title).NotEmpty();
+        { 
+            RuleFor(x => x.Id).NotEmpty();
+           RuleFor(x => x.Url).NotEmpty();
            RuleFor(x => x.RawHtml).NotEmpty();
         }
     }

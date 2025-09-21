@@ -64,6 +64,7 @@ public static class DependencyInjection
         return services;
     }
     
+    
     private static IServiceCollection AddDomainEventHandlers(this IServiceCollection services)
     {
         Type[] domainEventHandlers = Application.AssemblyReference.Assembly
