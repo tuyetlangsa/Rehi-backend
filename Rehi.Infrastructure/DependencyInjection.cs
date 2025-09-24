@@ -1,12 +1,15 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Tokens;
 using Quartz;
 using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Domain.Common;
+using Rehi.Infrastructure.Authentication;
 using Rehi.Infrastructure.Clock;
 using Rehi.Infrastructure.Database;
 using Rehi.Infrastructure.Outbox;
@@ -22,8 +25,8 @@ public static class DependencyInjection
         services
             .AddDomainEventHandlers()
             .AddDatabase(configuration)
-            .AddHealthChecks(configuration);
-            // .AddAuthenticationInternal(configuration);
+            .AddHealthChecks(configuration)
+            .AddAuthenticationInternal(configuration);
 
 
             private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
@@ -88,26 +91,27 @@ public static class DependencyInjection
         }
         return services;
     }
-    // private static IServiceCollection AddAuthenticationInternal(
-    //     this IServiceCollection services,
-    //     IConfiguration configuration)
-    // {
-    //     services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    //         .AddJwtBearer(o =>
-    //         {
-    //             o.RequireHttpsMetadata = false;
-    //             o.TokenValidationParameters = new TokenValidationParameters()
-    //             {
-    //                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!)),
-    //                 ValidIssuer = configuration["Jwt:Issuer"],
-    //                 ValidAudience = configuration["Jwt:Audience"],
-    //                 ClockSkew = TimeSpan.Zero
-    //             };
-    //         });
-    //
-    //     services.AddHttpContextAccessor();
-    //     return services;
-    // }
+    private static IServiceCollection AddAuthenticationInternal(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        Auth0Options auth0Options = configuration.GetSection("Auth0").Get<Auth0Options>()!;
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.Authority = $"https://{auth0Options.Domain}";
+                options.Audience = auth0Options.Audience;
+
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateAudience = true,
+                    ValidateIssuer = true,
+                };
+            });
+        services.AddHttpContextAccessor();
+        return services;
+    }
 }
 
 
