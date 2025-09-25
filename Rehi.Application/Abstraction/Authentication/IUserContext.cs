@@ -1,7 +1,7 @@
 namespace Rehi.Application.Abstraction.Authentication;
 
-public class IUserContext
+public interface IUserContext
 {
-    Guid UserId { get; }
+    // Guid UserId { get; }
     string Email { get;  }
 }

@@ -1,6 +1,5 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Rehi.Application.Abstraction.CurrentUser;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
 using Rehi.Domain.Articles;

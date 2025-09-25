@@ -73,6 +73,9 @@ namespace Rehi.Infrastructure.Database.Migrations
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.Property<int?>("WordCount")
                         .HasColumnType("integer");
 

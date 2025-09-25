@@ -6,9 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Quartz;
+using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Domain.Common;
+using Rehi.Domain.Users;
 using Rehi.Infrastructure.Authentication;
 using Rehi.Infrastructure.Clock;
 using Rehi.Infrastructure.Database;
@@ -43,6 +45,7 @@ public static class DependencyInjection
                 services.Configure<OutboxOptions>(configuration.GetSection("Rehi:Outbox"));
                 services.ConfigureOptions<ConfigureProcessOutboxJob>();
                 services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
+                services.AddScoped<IUserContext, UserContext>();
                 services.AddQuartz(configurator =>
                 {
                     var scheduler = Guid.NewGuid();

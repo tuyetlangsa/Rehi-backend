@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
 using Rehi.Domain.Common;
@@ -9,7 +10,7 @@ namespace Rehi.Application.Users;
 public abstract class CreateUser
 {
     public record Command(string Email, string FullName) : ICommand<Guid>;
-    internal sealed class Handler(IDbContext dbContext) : ICommandHandler<Command, Guid>
+    internal sealed class Handler(IDbContext dbContext, IUserContext userContext) : ICommandHandler<Command, Guid>
     {
         public async Task<Result<Guid>> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -18,6 +19,8 @@ public abstract class CreateUser
             {
                 return user.Id;
             }
+
+            var email = userContext.Email;
             user = new User
             {
                 Id = Guid.NewGuid(),
