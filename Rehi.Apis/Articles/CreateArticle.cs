@@ -21,6 +21,7 @@ public class CreateArticleEndpoint : IEndpoint
                 return result.MatchCreated(id => $"/articles/{id}");
             })
             .WithTags("Articles")
+            .RequireAuthorization()
             .WithName("CreateArticle");
     }
     internal sealed class Request

@@ -19,4 +19,5 @@ public class Article : Entity
     public string? Language { get; set; }
     public TimeSpan? TimeToRead { get; set; }
     public int? WordCount { get; set; }
+    public Guid UserId { get; set; }
 }

@@ -2,9 +2,7 @@ using Rehi.Apis.Endpoints;
 using Rehi.Apis.Extensions;
 using Rehi.Apis.Middleware;
 using Rehi.Application;
-using Rehi.Application.Abstraction.CurrentUser;
 using Rehi.Infrastructure;
-using Rehi.Infrastructure.CurrentUser;
 using Serilog;
 
 namespace Rehi.Apis;
@@ -22,7 +20,7 @@ public class Program
             .AddApplication() // add application handler
             .AddPresentation()
             .AddInfrastructure(builder.Configuration);
-        
+        builder.Services.AddAuthorization();
 
         WebApplication app = builder.Build();
 
@@ -32,8 +30,8 @@ public class Program
         app.UseLogContext();
         app.UseSerilogRequestLogging();
         app.UseExceptionHandler();
-        // app.UseAuthentication();
-        // app.UseAuthorization();
+        app.UseAuthentication();
+        app.UseAuthorization();
         app.MapEndpoints();
         app.Run();
     }
