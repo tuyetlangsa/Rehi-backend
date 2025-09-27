@@ -81,6 +81,8 @@ namespace Rehi.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("Articles", "public");
                 });
 
@@ -144,6 +146,22 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users", "public");
+                });
+
+            modelBuilder.Entity("Rehi.Domain.Articles.Article", b =>
+                {
+                    b.HasOne("Rehi.Domain.Users.User", "User")
+                        .WithMany("Articles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Rehi.Domain.Users.User", b =>
+                {
+                    b.Navigation("Articles");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,9 +1,11 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
 using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
+using Rehi.Domain.Users;
 
 namespace Rehi.Application.Articles.CreateArticle;
 
@@ -16,10 +18,18 @@ public abstract class CreateArticle
         string Url,
         bool IsSavedBefore
     );
-    internal class Handler(IDbContext dbContext) : ICommandHandler<Command, Response>
+    internal class Handler(IDbContext dbContext, IUserContext userContext) : ICommandHandler<Command, Response>
     {
         public async Task<Result<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var userEmail = userContext.Email;
+            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userEmail , cancellationToken);
+
+            if (user is null)
+            {
+                return Result.Failure<Response>(UserErrors.NotFound);
+            }
+            
             var articleExisted = await dbContext.Articles
                 .SingleOrDefaultAsync(a => a.Url == command.Url, cancellationToken);
 
@@ -32,7 +42,8 @@ public abstract class CreateArticle
             {
                 Id = command.Id,
                 Url = command.Url,
-                RawHtml = command.RawHtml
+                RawHtml = command.RawHtml,
+                UserId = user!.Id, 
             };
             
             article.Raise(new ArticleCreatedDomainEvent(article.Id));
@@ -47,8 +58,8 @@ public abstract class CreateArticle
         public Validator()
         { 
             RuleFor(x => x.Id).NotEmpty();
-           RuleFor(x => x.Url).NotEmpty();
-           RuleFor(x => x.RawHtml).NotEmpty();
+            RuleFor(x => x.Url).NotEmpty();
+            RuleFor(x => x.RawHtml).NotEmpty();
         }
     }
 }

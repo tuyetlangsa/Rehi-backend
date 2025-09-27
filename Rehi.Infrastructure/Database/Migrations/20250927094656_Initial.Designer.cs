@@ -12,8 +12,8 @@ using Rehi.Infrastructure.Database;
 namespace Rehi.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250924010228_Add_User_Table_Migration")]
-    partial class Add_User_Table_Migration
+    [Migration("20250927094656_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -76,10 +76,15 @@ namespace Rehi.Infrastructure.Database.Migrations
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.Property<int?>("WordCount")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Articles", "public");
                 });
@@ -144,6 +149,22 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users", "public");
+                });
+
+            modelBuilder.Entity("Rehi.Domain.Articles.Article", b =>
+                {
+                    b.HasOne("Rehi.Domain.Users.User", "User")
+                        .WithMany("Articles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Rehi.Domain.Users.User", b =>
+                {
+                    b.Navigation("Articles");
                 });
 #pragma warning restore 612, 618
         }
