@@ -1,4 +1,5 @@
 using Rehi.Domain.Common;
+using Rehi.Domain.Users;
 
 namespace Rehi.Domain.Articles;
 
@@ -20,4 +21,7 @@ public class Article : Entity
     public TimeSpan? TimeToRead { get; set; }
     public int? WordCount { get; set; }
     public Guid UserId { get; set; }
+
+    public User User { get; set; } = null!;
+
 }
