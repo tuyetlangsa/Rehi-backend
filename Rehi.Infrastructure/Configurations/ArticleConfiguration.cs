@@ -22,5 +22,7 @@ public class ArticleConfiguration : IEntityTypeConfiguration<Article>
         builder.Property(e => e.WordCount);
         builder.Property(e => e.TimeToRead);
         builder.Property(e => e.PublishDate);
+        builder.HasOne(e => e.User).WithMany(u => u.Articles).HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
