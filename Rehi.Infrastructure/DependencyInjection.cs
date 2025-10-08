@@ -4,23 +4,25 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Quartz;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
+using Rehi.Application.Abstraction.Email;
 using Rehi.Domain.Common;
 using Rehi.Domain.Users;
 using Rehi.Infrastructure.Authentication;
 using Rehi.Infrastructure.Clock;
 using Rehi.Infrastructure.Database;
+using Rehi.Infrastructure.EmailService;
 using Rehi.Infrastructure.Outbox;
 
 namespace Rehi.Infrastructure;
 
 public static class DependencyInjection
 {
-    
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration) =>
@@ -30,37 +32,54 @@ public static class DependencyInjection
             .AddHealthChecks(configuration)
             .AddAuthenticationInternal(configuration);
 
+    private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.TryAddSingleton<InsertOutboxMessagesInterceptor>();
+        services.AddDbContext<IDbContext, ApplicationDbContext>((sp, options) =>
+            options
+                .UseNpgsql(
+                    configuration.GetConnectionString("Database"),
+                    npgsqlOptions => npgsqlOptions
+                        .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Default))
+                .AddInterceptors(sp.GetRequiredService<InsertOutboxMessagesInterceptor>()));
 
-            private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
+        services.Configure<OutboxOptions>(configuration.GetSection("Rehi:Outbox"));
+        services.ConfigureOptions<ConfigureProcessOutboxJob>();
+        services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
+        services.AddScoped<IUserContext, UserContext>();
+        services.AddScoped<ISendEmailService, SendEmailService>();
+
+        services.AddQuartz(configurator =>
+        {
+            var scheduler = Guid.NewGuid();
+            configurator.SchedulerId = $"default-id-{scheduler}";
+            configurator.SchedulerName = $"default-name-{scheduler}";
+
+            configurator.AddJob<EmailReminderJob>(c => c
+                .StoreDurably()
+                .WithIdentity(EmailReminderJob.Name));
+
+            configurator.UsePersistentStore(persistenceOptions =>
             {
-                services.TryAddSingleton<InsertOutboxMessagesInterceptor>();
-                services.AddDbContext<IDbContext, ApplicationDbContext>((sp, options) =>
-                    options
-                        .UseNpgsql(
-                            configuration.GetConnectionString("Database"),
-                            npgsqlOptions => npgsqlOptions
-                                .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Default))
-                        .AddInterceptors(sp.GetRequiredService<InsertOutboxMessagesInterceptor>()));
-                
-                services.Configure<OutboxOptions>(configuration.GetSection("Rehi:Outbox"));
-                services.ConfigureOptions<ConfigureProcessOutboxJob>();
-                services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
-                services.AddScoped<IUserContext, UserContext>();
-                services.AddQuartz(configurator =>
+                persistenceOptions.UsePostgres(cfg =>
                 {
-                    var scheduler = Guid.NewGuid();
-                    configurator.SchedulerId = $"default-id-{scheduler}";
-                    configurator.SchedulerName = $"default-name-{scheduler}";
-                });
+                    cfg.ConnectionString = configuration.GetConnectionString("Database");
+                    cfg.TablePrefix = "public.qrtz_";
+                },
+                dataSourceName: "reminders");
 
-                services.AddQuartzHostedService(options =>
-                {
-                    options.WaitForJobsToComplete = true;
-                });
-                return services;
-            }
+                persistenceOptions.UseNewtonsoftJsonSerializer();
+                persistenceOptions.UseProperties = true;
+            });
+        });
 
-            
+        services.AddQuartzHostedService(options =>
+        {
+            options.WaitForJobsToComplete = true;
+        });
+
+        return services;
+    }
 
     private static IServiceCollection AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
@@ -69,8 +88,7 @@ public static class DependencyInjection
             .AddNpgSql(configuration.GetConnectionString("Database")!);
         return services;
     }
-    
-    
+
     private static IServiceCollection AddDomainEventHandlers(this IServiceCollection services)
     {
         Type[] domainEventHandlers = Application.AssemblyReference.Assembly
@@ -94,6 +112,7 @@ public static class DependencyInjection
         }
         return services;
     }
+
     private static IServiceCollection AddAuthenticationInternal(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -116,7 +135,3 @@ public static class DependencyInjection
         return services;
     }
 }
-
-
-
-    
