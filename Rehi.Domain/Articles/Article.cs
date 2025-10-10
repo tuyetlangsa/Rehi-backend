@@ -1,4 +1,5 @@
 using Rehi.Domain.Common;
+using Rehi.Domain.Tags;
 using Rehi.Domain.Users;
 
 namespace Rehi.Domain.Articles;
@@ -11,7 +12,7 @@ public class Article : Entity
     public string? Title { get; set; } 
     public string? Author { get; set; }
     public string? Summary { get; set; }
-    public DateTime? PublishDate { get; set; }
+    public DateTimeOffset? PublishDate { get; set; }
     public string? ImageUrl { get; set; }
     public string? Content { get; set; }
     public string? TextContent { get; set; }
@@ -23,5 +24,8 @@ public class Article : Entity
     public Guid UserId { get; set; }
 
     public User User { get; set; } = null!;
-
+    public ICollection<Tag> Tags { get; set; } = new List<Tag>();
+    public bool IsDeleted { get; set; }
+    public DateTimeOffset CreateAt { get; set; }
+    public DateTimeOffset? UpdateAt { get; set; }
 }

@@ -21,8 +21,13 @@ public class ArticleConfiguration : IEntityTypeConfiguration<Article>
         builder.Property(e => e.SaveUsing).HasMaxLength(64);
         builder.Property(e => e.WordCount);
         builder.Property(e => e.TimeToRead);
-        builder.Property(e => e.PublishDate);
+        builder.Property(e => e.PublishDate).HasColumnType("timestamptz");
         builder.HasOne(e => e.User).WithMany(u => u.Articles).HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(e => e.IsDeleted).HasDefaultValue(false);
+        builder.HasQueryFilter(e => !e.IsDeleted);
+        builder.Property(e => e.CreateAt).HasColumnType("timestamptz")
+            .IsRequired();
+        builder.Property(e => e.UpdateAt).HasColumnType("timestamptz").IsRequired(false);
     }
 }
