@@ -9,5 +9,5 @@ public class User : Entity
     public string Email { get; set; } = null!;
     public string FullName { get; set; } = null!;
     public ICollection<Article> Articles { get; set; } = new List<Article>();
-
+    public DateTime ScheduleTime { get; set; }
 }
