@@ -69,7 +69,7 @@ namespace Rehi.Infrastructure.Database.Migrations
                     Title = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Author = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
                     Summary = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
-                    PublishDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    PublishDate = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),
                     ImageUrl = table.Column<string>(type: "text", nullable: true),
                     Content = table.Column<string>(type: "text", nullable: true),
                     TextContent = table.Column<string>(type: "text", nullable: true),
@@ -77,7 +77,10 @@ namespace Rehi.Infrastructure.Database.Migrations
                     Language = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: true),
                     TimeToRead = table.Column<TimeSpan>(type: "interval", nullable: true),
                     WordCount = table.Column<int>(type: "integer", nullable: true),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    CreateAt = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
+                    UpdateAt = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -91,18 +94,95 @@ namespace Rehi.Infrastructure.Database.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Tags",
+                schema: "public",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    CreateAt = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
+                    UpdateAt = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tags", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Tags_Users_UserId",
+                        column: x => x.UserId,
+                        principalSchema: "public",
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ArticleTags",
+                schema: "public",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TagId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ArticleId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ArticleTags", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ArticleTags_Articles_ArticleId",
+                        column: x => x.ArticleId,
+                        principalSchema: "public",
+                        principalTable: "Articles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ArticleTags_Tags_TagId",
+                        column: x => x.TagId,
+                        principalSchema: "public",
+                        principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Articles_UserId",
                 schema: "public",
                 table: "Articles",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ArticleTags_ArticleId",
+                schema: "public",
+                table: "ArticleTags",
+                column: "ArticleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ArticleTags_TagId",
+                schema: "public",
+                table: "ArticleTags",
+                column: "TagId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tags_UserId",
+                schema: "public",
+                table: "Tags",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                schema: "public",
+                table: "Users",
+                column: "Email",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Articles",
+                name: "ArticleTags",
                 schema: "public");
 
             migrationBuilder.DropTable(
@@ -111,6 +191,14 @@ namespace Rehi.Infrastructure.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "outbox_messages",
+                schema: "public");
+
+            migrationBuilder.DropTable(
+                name: "Articles",
+                schema: "public");
+
+            migrationBuilder.DropTable(
+                name: "Tags",
                 schema: "public");
 
             migrationBuilder.DropTable(

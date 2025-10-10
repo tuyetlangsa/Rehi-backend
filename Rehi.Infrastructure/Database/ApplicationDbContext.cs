@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
+using Rehi.Domain.Tags;
 using Rehi.Domain.Users;
 
 
@@ -19,6 +20,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<Article> Articles { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<ArticleTag> ArticleTags { get; set; }
 
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; set; }

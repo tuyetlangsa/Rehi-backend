@@ -71,7 +71,7 @@ public static class CustomResults
 
             return new Dictionary<string, object?>
             {
-                { "errors", validationError.Errors }
+                { "errors", validationError.Errors.Select(er => new { er.Code, er.Description}) }
             };
         }
     }

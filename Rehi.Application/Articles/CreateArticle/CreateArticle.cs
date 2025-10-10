@@ -11,7 +11,7 @@ namespace Rehi.Application.Articles.CreateArticle;
 
 public abstract class CreateArticle
 {
-    public record Command(Guid Id, string Url, string RawHtml): ICommand<Response>;
+    public record Command(Guid Id, string Url, string RawHtml,string Title, long CreateAt): ICommand<Response>;
     
     public record Response(
         Guid Id,
@@ -37,13 +37,16 @@ public abstract class CreateArticle
             {
                 return new Response(articleExisted.Id, articleExisted.Url, true);
             }
-            
+            var createAt = DateTimeOffset.FromUnixTimeMilliseconds(command.CreateAt);
+
             var article = new Article()
             {
                 Id = command.Id,
                 Url = command.Url,
                 RawHtml = command.RawHtml,
                 UserId = user!.Id, 
+                CreateAt = createAt,
+                Title = command.Title,
             };
             
             article.Raise(new ArticleCreatedDomainEvent(article.Id));
