@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Rehi.Infrastructure.Database;
@@ -11,9 +12,11 @@ using Rehi.Infrastructure.Database;
 namespace Rehi.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251008160510_UpdateSendEmailSetting")]
+    partial class UpdateSendEmailSetting
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,23 +39,15 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.Property<string>("Content")
                         .HasColumnType("text");
 
-                    b.Property<DateTimeOffset>("CreateAt")
-                        .HasColumnType("timestamptz");
-
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
 
                     b.Property<string>("Language")
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
-                    b.Property<DateTimeOffset?>("PublishDate")
-                        .HasColumnType("timestamptz");
+                    b.Property<DateTime?>("PublishDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("RawHtml")
                         .IsRequired()
@@ -76,9 +71,6 @@ namespace Rehi.Infrastructure.Database.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTimeOffset?>("UpdateAt")
-                        .HasColumnType("timestamptz");
-
                     b.Property<string>("Url")
                         .IsRequired()
                         .HasMaxLength(2048)
@@ -95,27 +87,6 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Articles", "public");
-                });
-
-            modelBuilder.Entity("Rehi.Domain.Articles.ArticleTag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ArticleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TagId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArticleId");
-
-                    b.HasIndex("TagId");
-
-                    b.ToTable("ArticleTags", "public");
                 });
 
             modelBuilder.Entity("Rehi.Domain.Common.OutboxMessage", b =>
@@ -161,38 +132,6 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.ToTable("outbox_message_consumers", "public");
                 });
 
-            modelBuilder.Entity("Rehi.Domain.Tags.Tag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreateAt")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTimeOffset?>("UpdateAt")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Tags", "public");
-                });
-
             modelBuilder.Entity("Rehi.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -212,9 +151,6 @@ namespace Rehi.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
-
                     b.ToTable("Users", "public");
                 });
 
@@ -229,35 +165,9 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Rehi.Domain.Articles.ArticleTag", b =>
-                {
-                    b.HasOne("Rehi.Domain.Articles.Article", null)
-                        .WithMany()
-                        .HasForeignKey("ArticleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Rehi.Domain.Tags.Tag", null)
-                        .WithMany()
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Rehi.Domain.Tags.Tag", b =>
-                {
-                    b.HasOne("Rehi.Domain.Users.User", null)
-                        .WithMany("Tags")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Rehi.Domain.Users.User", b =>
                 {
                     b.Navigation("Articles");
-
-                    b.Navigation("Tags");
                 });
 #pragma warning restore 612, 618
         }
