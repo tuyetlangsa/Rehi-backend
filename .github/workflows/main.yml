@@ -1,0 +1,38 @@
+name: 🚀 Publish Rehi Backend
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AZURE_WEBAPP_NAME: rehi-backend           
+  AZURE_WEBAPP_PACKAGE_PATH: ./publish      
+  DOTNET_VERSION: 8.0.x                    
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true 
+
+      - name: Restore, Build, and Publish
+        run: |
+          dotnet restore Rehi.Apis
+          dotnet build Rehi.Apis -c Release --no-restore
+          dotnet publish Rehi.Apis -c Release --no-build -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
