@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
+using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
 using Rehi.Domain.Users;
 
@@ -28,7 +29,8 @@ public class GetAllState
         List<Guid> TagIds,
         TimeSpan? TimeToRead,
         string? CleanedHtml,
-        bool IsDeleted);
+        bool IsDeleted,
+        string Location);
     public record TagResponse(
         Guid Id,
         string Name,
@@ -44,13 +46,12 @@ public class GetAllState
              {
                  return Result.Failure<Response>(UserErrors.NotFound);
              }
-             dbContext.Articles.IgnoreQueryFilters();
 
              var tagResponses = await dbContext.Tags
                  .AsNoTracking().Select(t => new TagResponse(t.Id, t.Name, t.IsDeleted))
                  .ToListAsync(cancellationToken);
 
-             var articles = await dbContext.Articles
+             var articles = await dbContext.Articles.IgnoreQueryFilters().Where(a => a.UserId == user.Id)
                  .AsNoTracking().ToListAsync(cancellationToken);
              
              var articleResponses = articles.Select(a =>
@@ -72,7 +73,8 @@ public class GetAllState
                      a.Tags.Select(t => t.Id).ToList(),
                      a.TimeToRead,
                      a.Content,
-                     a.IsDeleted);
+                     a.IsDeleted,
+                     a.Location.ToString());
              }).ToList();
              
              return new Response(tagResponses, articleResponses);

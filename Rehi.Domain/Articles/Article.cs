@@ -28,4 +28,6 @@ public class Article : Entity
     public bool IsDeleted { get; set; }
     public DateTimeOffset CreateAt { get; set; }
     public DateTimeOffset? UpdateAt { get; set; }
+    
+    public Location Location { get; set; }
 }

@@ -29,5 +29,6 @@ public class ArticleConfiguration : IEntityTypeConfiguration<Article>
         builder.Property(e => e.CreateAt).HasColumnType("timestamptz")
             .IsRequired();
         builder.Property(e => e.UpdateAt).HasColumnType("timestamptz").IsRequired(false);
+        builder.Property(e => e.Location).HasConversion<byte>().IsRequired().HasDefaultValue(Location.Reading);
     }
 }

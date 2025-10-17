@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
+using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
 using Rehi.Domain.Users;
 
@@ -32,7 +33,8 @@ public abstract class FetchState
         List<Guid> TagIds,
         TimeSpan? TimeToRead,
         string? CleanedHtml,
-        bool IsDeleted);
+        bool IsDeleted,
+        string Location);
 
     public record TagResponse(
         Guid Id,
@@ -50,15 +52,11 @@ public abstract class FetchState
                 return Result.Failure<Response>(UserErrors.NotFound);
             }
 
-
-            dbContext.Articles.IgnoreQueryFilters();
-
-
             var lastUpdateTime = DateTimeOffset.FromUnixTimeMilliseconds(request.LastUpdateTime);
 
             var tags = await dbContext.Tags.AsNoTracking()
-                .Where(t => t.CreateAt > lastUpdateTime
-                            || t.UpdateAt > lastUpdateTime)
+                .Where(t => (t.CreateAt > lastUpdateTime
+                            || t.UpdateAt > lastUpdateTime) && t.UserId == user.Id)
                 .ToListAsync(cancellationToken);
 
             var createdTags = tags
@@ -75,7 +73,7 @@ public abstract class FetchState
 
 
             var articles =
-                await dbContext.Articles.Include(a => a.Tags)
+                await dbContext.Articles.IgnoreQueryFilters().Include(a => a.Tags)
                     .Where(a => a.UserId == user.Id
                                 && (a.CreateAt > lastUpdateTime
                                     || a.UpdateAt > lastUpdateTime)).ToListAsync(cancellationToken);
@@ -100,7 +98,8 @@ public abstract class FetchState
                         a.Tags.Select(a => a.Id).ToList(),
                         a.TimeToRead,
                         a.Content,
-                        a.IsDeleted);
+                        a.IsDeleted,
+                        a.Location.ToString());
                 }).ToList();
 
             var updatedArticles = articles
@@ -125,7 +124,8 @@ public abstract class FetchState
                         a.Tags.Select(t => t.Id).ToList(),
                         a.TimeToRead,
                         a.Content,
-                        a.IsDeleted);
+                        a.IsDeleted,
+                        a.Location.ToString());
                 }).ToList();
 
 
