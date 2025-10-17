@@ -9,7 +9,7 @@ public class DeleteArticle : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/articles/{articleId}/{updateAt}", 
+        app.MapDelete("/articles/{articleId}/{updateAt}", 
                 async ([FromRoute] Guid articleId, [FromRoute] long updateAt, ISender sender) =>
                 {
                     var result =
