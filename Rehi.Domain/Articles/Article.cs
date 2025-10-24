@@ -1,4 +1,5 @@
 using Rehi.Domain.Common;
+using Rehi.Domain.Highlights;
 using Rehi.Domain.Tags;
 using Rehi.Domain.Users;
 
@@ -30,4 +31,7 @@ public class Article : Entity
     public DateTimeOffset? UpdateAt { get; set; }
     
     public Location Location { get; set; }
+    public string? Note { get; set; }
+    public virtual ICollection<Highlight> Highlights { get; set; } = new List<Highlight>();
+
 }

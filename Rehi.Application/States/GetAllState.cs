@@ -13,7 +13,8 @@ public class GetAllState
     public record Query() : IQuery<Response>;
     public record Response(
         List<TagResponse> Tags, 
-        List<ArticleResponse> Articles);
+        List<ArticleResponse> Articles,
+        List<HighlightResponse> Highlights);
     public record ArticleResponse(
         Guid Id,
         string Url,
@@ -30,12 +31,25 @@ public class GetAllState
         TimeSpan? TimeToRead,
         string? CleanedHtml,
         bool IsDeleted,
-        string Location);
+        string Location,
+        string? Note);
     public record TagResponse(
         Guid Id,
         string Name,
         bool IsDeleted);
     
+    public record HighlightResponse(
+        Guid Id,
+        Guid ArticleId,
+        string Location,
+        string Html,
+        string Markdown,
+        string PlainText,
+        long CreateAt,
+        long? UpdateAt,
+        string? Color,
+        bool IsDeleted,
+        string CreateBy);
     
      internal sealed class Handler(IDbContext dbContext, IUserContext userContext) : IQueryHandler<Query, Response>
      {
@@ -50,10 +64,10 @@ public class GetAllState
              var tagResponses = await dbContext.Tags
                  .AsNoTracking().Select(t => new TagResponse(t.Id, t.Name, t.IsDeleted))
                  .ToListAsync(cancellationToken);
-
              var articles = await dbContext.Articles.IgnoreQueryFilters().Where(a => a.UserId == user.Id)
                  .AsNoTracking().ToListAsync(cancellationToken);
-             
+             var highlights = await dbContext.Highlights.IgnoreQueryFilters().Where(h => h.UserId == user.Id)
+                 .AsNoTracking().ToListAsync(cancellationToken);
              var articleResponses = articles.Select(a =>
              {
                  var createAt = a.CreateAt.ToUnixTimeMilliseconds();
@@ -74,10 +88,30 @@ public class GetAllState
                      a.TimeToRead,
                      a.Content,
                      a.IsDeleted,
-                     a.Location.ToString());
+                     a.Location.ToString(),
+                     a.Note
+                 );
              }).ToList();
              
-             return new Response(tagResponses, articleResponses);
+             var highlightResponse = highlights.Select(h => 
+             {
+                 var createAt = h.CreateAt.ToUnixTimeMilliseconds();
+                 var updateAt = h.UpdateAt?.ToUnixTimeMilliseconds();
+
+                 return new HighlightResponse(
+                     h.Id,
+                     h.ArticleId,
+                     h.Location,
+                     h.Html,
+                     h.Markdown,
+                     h.PlainText,
+                     createAt,
+                     updateAt,
+                     h.Color,
+                     h.IsDeleted,
+                     h.CreateBy);
+             }).ToList();
+             return new Response(tagResponses, articleResponses, highlightResponse);
          }
      }
 }

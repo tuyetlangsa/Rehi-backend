@@ -14,9 +14,9 @@ public abstract class FetchState
 
     public record Response(Created Created, Updated Updated);
     
-    public record Created(List<ArticleResponse> Articles, List<TagResponse> Tags);
+    public record Created(List<ArticleResponse> Articles, List<TagResponse> Tags, List<HighlightResponse> Highlights);
 
-    public record Updated(List<ArticleResponse> Articles, List<TagResponse> Tags);
+    public record Updated(List<ArticleResponse> Articles, List<TagResponse> Tags, List<HighlightResponse> Highlights);
 
     public record ArticleResponse(
         Guid Id,
@@ -34,13 +34,26 @@ public abstract class FetchState
         TimeSpan? TimeToRead,
         string? CleanedHtml,
         bool IsDeleted,
-        string Location);
+        string Location,
+        string? Note);
 
     public record TagResponse(
         Guid Id,
         string Name,
         bool IsDeleted);
 
+    public record HighlightResponse(
+        Guid Id,
+        Guid ArticleId,
+        string Location,
+        string Html,
+        string Markdown,
+        string PlainText,
+        long CreateAt,
+        long? UpdateAt,
+        string? Color,
+        bool IsDeleted,
+        string CreateBy);
 
     internal sealed class Handler(IDbContext dbContext, IUserContext userContext) : IQueryHandler<Query, Response>
     {
@@ -99,7 +112,8 @@ public abstract class FetchState
                         a.TimeToRead,
                         a.Content,
                         a.IsDeleted,
-                        a.Location.ToString());
+                        a.Location.ToString(),
+                        a.Note);
                 }).ToList();
 
             var updatedArticles = articles
@@ -125,12 +139,61 @@ public abstract class FetchState
                         a.TimeToRead,
                         a.Content,
                         a.IsDeleted,
-                        a.Location.ToString());
+                        a.Location.ToString(),
+                        a.Note);
                 }).ToList();
 
+            var highlights = await dbContext.Highlights.IgnoreQueryFilters()
+                .Where(h => (h.CreateAt > lastUpdateTime
+                            || h.UpdateAt > lastUpdateTime) && h.UserId == user.Id)
+                .ToListAsync(cancellationToken);
 
-            var created = new Created(createdArticles, createdTags);
-            var updated = new Updated(updatedArticles, updatedTags);
+            var createdHighlights = highlights
+                .Where(h => h.CreateAt > lastUpdateTime)
+                .Select(h =>
+                {
+                    var createAt = h.CreateAt.ToUnixTimeMilliseconds();
+                    var updateAt = h.UpdateAt?.ToUnixTimeMilliseconds();
+                    return new HighlightResponse(
+                        h.Id, 
+                        h.ArticleId, 
+                        h.Location, 
+                        h.Html, 
+                        h.Markdown, 
+                        h.PlainText, 
+                        createAt, 
+                        updateAt, 
+                        h.Color,
+                        h.IsDeleted,
+                        h.CreateBy);
+                })
+                .ToList();
+            
+            var updatedHighlights = highlights
+                .Where(h => h.CreateAt <= lastUpdateTime
+                            && h.UpdateAt != null
+                            && h.UpdateAt > lastUpdateTime)
+                .Select(h =>
+                {
+                    var createAt = h.CreateAt.ToUnixTimeMilliseconds();
+                    var updateAt = h.UpdateAt?.ToUnixTimeMilliseconds();
+                    return new HighlightResponse(
+                        h.Id, 
+                        h.ArticleId, 
+                        h.Location, 
+                        h.Html, 
+                        h.Markdown, 
+                        h.PlainText, 
+                        createAt, 
+                        updateAt, 
+                        h.Color,
+                        h.IsDeleted,
+                        h.CreateBy);
+                })
+                .ToList();
+            
+            var created = new Created(createdArticles, createdTags, createdHighlights);
+            var updated = new Updated(updatedArticles, updatedTags, updatedHighlights);
             return new Response(created, updated);
         }
     }

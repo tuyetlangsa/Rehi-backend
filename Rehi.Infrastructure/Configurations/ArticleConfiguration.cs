@@ -30,5 +30,6 @@ public class ArticleConfiguration : IEntityTypeConfiguration<Article>
             .IsRequired();
         builder.Property(e => e.UpdateAt).HasColumnType("timestamptz").IsRequired(false);
         builder.Property(e => e.Location).HasConversion<byte>().IsRequired().HasDefaultValue(Location.Reading);
+        builder.Property(e => e.Note).HasColumnType("text").IsRequired(false);
     }
 }
