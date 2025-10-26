@@ -24,7 +24,7 @@ public sealed class InsertOutboxMessagesInterceptor : SaveChangesInterceptor
     private static void InsertOutboxMessages(DbContext context)
     {
         var outboxMessages = context
-            .ChangeTracker
+            .ChangeTracker //track changes from db context 
             .Entries<Entity>()
             .Select(entry => entry.Entity)
             .SelectMany(entity =>

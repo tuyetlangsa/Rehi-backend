@@ -3,6 +3,7 @@ using Rehi.Application.Abstraction.Data;
 using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
 using Rehi.Domain.Highlights;
+using Rehi.Domain.Subscription;
 using Rehi.Domain.Tags;
 using Rehi.Domain.Users;
 
@@ -27,4 +28,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Highlight> Highlights { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; set; }
+    public DbSet<UserSubscription> UserSubscriptions { get; set; }
+    public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
 }

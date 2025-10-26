@@ -22,4 +22,8 @@
       <PackageReference Include="SmartReader" Version="0.10.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Abstraction\Subscription\" />
+    </ItemGroup>
+
 </Project>
