@@ -25,12 +25,12 @@ public class Program
 
         WebApplication app = builder.Build();
         
-        // === Seed Database ===
-        using (var scope = app.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            DbInitializer.Seed(dbContext);
-        }
+        // // === Seed Database ===
+        // using (var scope = app.Services.CreateScope())
+        // {
+        //     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        //     DbInitializer.Seed(dbContext);
+        // }
         
         app.UseSwaggerWithUi();
         app.ApplyMigrations();
