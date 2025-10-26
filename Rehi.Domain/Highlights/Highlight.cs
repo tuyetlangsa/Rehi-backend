@@ -18,6 +18,7 @@ public class Highlight : Entity
     public string? Color { get; set; }
     public bool IsDeleted { get; set; }
     public string CreateBy { get; set; } = null!;
+    public string? Note { get; set; }
 
     public virtual Article Article { get; set; } = null!;
     public virtual User User { get; set; } = null!;

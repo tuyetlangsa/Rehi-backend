@@ -53,7 +53,8 @@ public abstract class FetchState
         long? UpdateAt,
         string? Color,
         bool IsDeleted,
-        string CreateBy);
+        string CreateBy,
+        string? Note);
 
     internal sealed class Handler(IDbContext dbContext, IUserContext userContext) : IQueryHandler<Query, Response>
     {
@@ -165,7 +166,8 @@ public abstract class FetchState
                         updateAt, 
                         h.Color,
                         h.IsDeleted,
-                        h.CreateBy);
+                        h.CreateBy,
+                        h.Note);
                 })
                 .ToList();
             
@@ -188,7 +190,8 @@ public abstract class FetchState
                         updateAt, 
                         h.Color,
                         h.IsDeleted,
-                        h.CreateBy);
+                        h.CreateBy,
+                        h.Note);
                 })
                 .ToList();
             

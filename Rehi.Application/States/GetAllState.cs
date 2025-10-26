@@ -49,7 +49,8 @@ public class GetAllState
         long? UpdateAt,
         string? Color,
         bool IsDeleted,
-        string CreateBy);
+        string CreateBy,
+        string? Note);
     
      internal sealed class Handler(IDbContext dbContext, IUserContext userContext) : IQueryHandler<Query, Response>
      {
@@ -109,7 +110,8 @@ public class GetAllState
                      updateAt,
                      h.Color,
                      h.IsDeleted,
-                     h.CreateBy);
+                     h.CreateBy,
+                     h.Note);
              }).ToList();
              return new Response(tagResponses, articleResponses, highlightResponse);
          }
