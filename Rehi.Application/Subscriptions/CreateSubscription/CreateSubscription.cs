@@ -6,6 +6,7 @@ using Rehi.Application.Abstraction.Payments;
 using Rehi.Application.States;
 using Rehi.Domain.Common;
 using Rehi.Domain.Subscription;
+using Rehi.Domain.Subscriptions;
 using Rehi.Domain.Users;
 
 namespace Rehi.Application.Subscriptions.CreateSubscription;
@@ -32,17 +33,23 @@ public abstract class CreateSubscription
             }
             var paymentService = paymentFactory.Create(request.Provider);
             var result = await paymentService.CreateSubscriptionAsync(request.PayPalPlanId);
-
-            var subsription = new UserSubscription()
+            var subscriptionPlan = await dbContext.SubscriptionPlans.SingleOrDefaultAsync(sp => sp.Id == request.SubscriptionPlanId, cancellationToken);
+            if (subscriptionPlan is null)
+            {
+                return Result.Failure<Response>(SubscriptionErrors.NotFound);
+            }
+            var subscription = new UserSubscription()
             {
                 UserId = user.Id,
                 PaymentProvider = request.Provider,
                 SubscriptionPlanId = request.SubscriptionPlanId,
-                ExternalSubscriptionId = result.SubscriptionId,
-                Status = SubscriptionStatus.Pending
+                Status = SubscriptionStatus.Pending,
+                PayPalSubscriptionId = result.SubscriptionId,
+                StartDate = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(subscriptionPlan.DurationDays)
             };
             
-            dbContext.UserSubscriptions.Add(subsription);
+            dbContext.UserSubscriptions.Add(subscription);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response(result.ApprovalUrl, result.SubscriptionId, request.Provider);

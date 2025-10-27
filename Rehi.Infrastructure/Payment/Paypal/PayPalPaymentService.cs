@@ -15,21 +15,21 @@ public class PayPalPaymentService : IPaymentService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<PayPalPaymentService> _logger;
-    private readonly PayPalSettings settings;
+    private readonly PayPalSettings _settings;
 
     public PayPalPaymentService(HttpClient httpClient, ILogger<PayPalPaymentService> logger, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _logger = logger;
-        settings = configuration.GetSection("PayPalSettings").Get<PayPalSettings>() ?? throw new ArgumentNullException(nameof(PayPalSettings));
+        _settings = configuration.GetSection("PayPalSettings").Get<PayPalSettings>() ?? throw new ArgumentNullException(nameof(PayPalSettings));
     }
 
     private async Task<string> GetAccessTokenAsync()
     {
         _httpClient.DefaultRequestHeaders.Clear();
         var authHeader =
-            Convert.ToBase64String(Encoding.UTF8.GetBytes($"{settings.ClientId}:{settings.ClientSecret}"));
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{settings.BaseUrl}/v1/oauth2/token");
+            Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_settings.ClientId}:{_settings.ClientSecret}"));
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/oauth2/token");
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
         request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded");
 
@@ -86,7 +86,7 @@ public class PayPalPaymentService : IPaymentService
             }
         };
         var json = JsonSerializer.Serialize(payload);
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{settings.BaseUrl}/v1/billing/subscriptions");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/billing/subscriptions");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         
@@ -100,7 +100,7 @@ public class PayPalPaymentService : IPaymentService
     public async Task<PayPalSubscriptionDetails> GetSubscriptionAsync(string subscriptionId)
     {
         var token = await GetAccessTokenAsync();
-        var request = new HttpRequestMessage(HttpMethod.Get, $"{settings.BaseUrl}/v1/billing/subscriptions/{subscriptionId}");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{_settings.BaseUrl}/v1/billing/subscriptions/{subscriptionId}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _httpClient.SendAsync(request);
@@ -114,7 +114,7 @@ public class PayPalPaymentService : IPaymentService
     {
         var token = await GetAccessTokenAsync();
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{settings.BaseUrl}/v1/billing/subscriptions/{subscriptionId}/cancel");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/billing/subscriptions/{subscriptionId}/cancel");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = new StringContent("{\"reason\":\"User cancelled manually\"}", Encoding.UTF8, "application/json");
 

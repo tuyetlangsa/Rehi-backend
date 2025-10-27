@@ -13,6 +13,7 @@ using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Email;
 using Rehi.Application.Abstraction.Payments;
+using Rehi.Application.Abstraction.Paypal;
 using Rehi.Domain.Common;
 using Rehi.Domain.Subscription;
 using Rehi.Domain.Users;
@@ -22,6 +23,7 @@ using Rehi.Infrastructure.Database;
 using Rehi.Infrastructure.EmailService;
 using Rehi.Infrastructure.Outbox;
 using Rehi.Infrastructure.Payment;
+using Rehi.Infrastructure.Payment.Paypal;
 using Rehi.Infrastructure.Paypal;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
@@ -56,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<ISendEmailService, SendEmailService>();
         services.AddScoped<IPaymentFactory, PaymentFactory>();
         services.AddScoped<IPaymentService, PayPalPaymentService>();
+        services.AddScoped<IPayPalWebHookService, PayPalWebhookService>();
         //subscription
         services.AddPayPalHttpClient(configuration);
         //need to refactor later
