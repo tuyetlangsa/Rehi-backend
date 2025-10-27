@@ -8,7 +8,7 @@ public static class PayPalHttpClientExtensions
 {
     public static IServiceCollection AddPayPalHttpClient(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHttpClient<PayPalService>(client =>
+        services.AddHttpClient<PayPalPaymentService>(client =>
         {
             client.BaseAddress = new Uri(configuration["PayPalSettings:BaseUrl"]);
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));

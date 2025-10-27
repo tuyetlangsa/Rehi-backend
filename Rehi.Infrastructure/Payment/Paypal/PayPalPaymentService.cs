@@ -5,18 +5,19 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Rehi.Application.Abstraction.Authentication;
-using Rehi.Application.Abstraction.Paypal;
+using Rehi.Application.Abstraction.Payments;
+using Rehi.Domain.Payment;
 using Rehi.Domain.Subscription;
 
 namespace Rehi.Infrastructure.Paypal;
 
-public class PayPalService : IPayPalService
+public class PayPalPaymentService : IPaymentService
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger<PayPalService> _logger;
+    private readonly ILogger<PayPalPaymentService> _logger;
     private readonly PayPalSettings settings;
 
-    public PayPalService(HttpClient httpClient, ILogger<PayPalService> logger, IConfiguration configuration)
+    public PayPalPaymentService(HttpClient httpClient, ILogger<PayPalPaymentService> logger, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _logger = logger;
@@ -25,8 +26,9 @@ public class PayPalService : IPayPalService
 
     private async Task<string> GetAccessTokenAsync()
     {
+        _httpClient.DefaultRequestHeaders.Clear();
         var authHeader =
-            Convert.ToBase64String(Encoding.UTF8.GetBytes($"{settings.ClientId} : {settings.ClientSecret}"));
+            Convert.ToBase64String(Encoding.UTF8.GetBytes($"{settings.ClientId}:{settings.ClientSecret}"));
         var request = new HttpRequestMessage(HttpMethod.Post, $"{settings.BaseUrl}/v1/oauth2/token");
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
         request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded");
@@ -39,8 +41,38 @@ public class PayPalService : IPayPalService
 
         return token.access_token;
     }
+    
+    private static PaymentResult MapToPaymentResult(string resultJson)
+    {
+        // 1. Deserialize the raw JSON string into the PayPal-specific structure
+        var payPalResponse = JsonSerializer.Deserialize<PayPalSubscriptionResponse>(resultJson);
 
-    public async Task<PayPalSubscriptionResponse> CreateSubscriptionAsync(string planId)
+        // Handle case where deserialization fails or returns null
+        if (payPalResponse == null)
+        {
+            throw new InvalidOperationException("Failed to deserialize PayPal subscription response.");
+        }
+
+        // 2. Extract the ApprovalUrl by finding the link with "rel": "approve"
+        string approvalUrl = payPalResponse.links?
+            // Find the link where the 'rel' property is "approve" (case-insensitive)
+            .FirstOrDefault(l => l.rel?.Equals("approve", StringComparison.OrdinalIgnoreCase) == true)?
+            // Get the 'href' property of that link
+            .href;
+
+        // 3. Map the extracted data to the standard PaymentResult structure
+        var paymentResult = new PaymentResult
+        {
+            SubscriptionId = payPalResponse.id,
+            Status = payPalResponse.status,
+            ApprovalUrl = approvalUrl,
+            Provider = "PayPal" // Hardcode provider name
+        };
+
+        return paymentResult;
+    }
+
+    public async Task<PaymentResult> CreateSubscriptionAsync(string planId)
     {
         var token = await GetAccessTokenAsync();
 
@@ -62,7 +94,7 @@ public class PayPalService : IPayPalService
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<PayPalSubscriptionResponse>(result);
+        return MapToPaymentResult(result);
     }
     
     public async Task<PayPalSubscriptionDetails> GetSubscriptionAsync(string subscriptionId)

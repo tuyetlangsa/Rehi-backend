@@ -13,6 +13,8 @@ public class UserSubscription : Entity
     public bool IsActive => DateTime.UtcNow <= EndDate;
     public User User { get; set; } = null!;
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
+    public string PaymentProvider { get; set; } = null!;
     public SubscriptionStatus Status { get; set; }
+    public string ExternalSubscriptionId { get; set; } = null!;
     public string PayPalSubscriptionId { get; set; } = null!;
 }
