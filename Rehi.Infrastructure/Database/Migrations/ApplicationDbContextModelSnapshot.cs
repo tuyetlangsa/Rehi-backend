@@ -475,7 +475,7 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.HasOne("Rehi.Domain.Users.User", "User")
                         .WithMany("UserSubscriptions")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("SubscriptionPlan");

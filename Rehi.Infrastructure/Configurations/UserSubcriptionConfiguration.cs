@@ -19,7 +19,7 @@ public class UserSubcriptionConfiguration : IEntityTypeConfiguration<UserSubscri
         builder.HasOne(us => us.User)
             .WithMany(u => u.UserSubscriptions)
             .HasForeignKey(us => us.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
         
         builder.HasOne(us => us.SubscriptionPlan)
             .WithMany(s => s.UserSubscriptions) 

@@ -41,11 +41,39 @@ namespace Rehi.Infrastructure.Database.Migrations
                 type: "text",
                 nullable: false,
                 defaultValue: "");
+            migrationBuilder.DropForeignKey(
+                name: "FK_UserSubscriptions_Users_UserId",
+                schema: "public",
+                table: "UserSubscriptions");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_UserSubscriptions_Users_UserId",
+                schema: "public",
+                table: "UserSubscriptions",
+                column: "UserId",
+                principalSchema: "public",
+                principalTable: "Users",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_UserSubscriptions_Users_UserId",
+                schema: "public",
+                table: "UserSubscriptions");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_UserSubscriptions_Users_UserId",
+                schema: "public",
+                table: "UserSubscriptions",
+                column: "UserId",
+                principalSchema: "public",
+                principalTable: "Users",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
             migrationBuilder.DropColumn(
                 name: "PaymentProvider",
                 schema: "public",

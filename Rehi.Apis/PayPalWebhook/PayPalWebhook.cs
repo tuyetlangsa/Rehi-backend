@@ -13,11 +13,9 @@ public class PayPalWebhook : IEndpoint
     {
         app.MapPost("/paypal/webhook", async ([FromBody] Request request, ISender sender) =>
             {
-                // var result = await sender.Send(new ReceivePayPalWebhook.Command(request.Payload, request.TransmissionId,
-                //     request.TransmissionTime, request.TransmissionSig, request.CertUrl));
-                // return result.MatchOk();
-                
-                return Result.Success().MatchOk();
+                var result = await sender.Send(new ReceivePayPalWebhook.Command(request.Payload, request.TransmissionId,
+                    request.TransmissionTime, request.TransmissionSig, request.CertUrl));
+                return result.MatchOk();
             })
             .WithTags("PayPal Webhook")
             .AllowAnonymous()

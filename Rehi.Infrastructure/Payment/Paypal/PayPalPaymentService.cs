@@ -92,7 +92,7 @@ public class PayPalPaymentService : IPaymentService
             }
         };
         var json = JsonSerializer.Serialize(payload);
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/billing/subscriptions");
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/billing/subscriptions");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -110,7 +110,7 @@ public class PayPalPaymentService : IPaymentService
         _logger.LogInformation("Sending PATCH request to cancel/update PayPal subscription {SubscriptionId}",
             cancelRequest.SubscriptionId);
 
-        var request = new HttpRequestMessage(HttpMethod.Post,
+        using var request = new HttpRequestMessage(HttpMethod.Post,
             $"{_settings.BaseUrl}/v1/billing/subscriptions/{cancelRequest.SubscriptionId}/cancel");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -151,7 +151,7 @@ public class PayPalPaymentService : IPaymentService
     public async Task<PayPalSubscriptionDetails> GetSubscriptionAsync(string subscriptionId)
     {
         var token = await GetAccessTokenAsync();
-        var request = new HttpRequestMessage(HttpMethod.Get,
+        using var request = new HttpRequestMessage(HttpMethod.Get,
             $"{_settings.BaseUrl}/v1/billing/subscriptions/{subscriptionId}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
