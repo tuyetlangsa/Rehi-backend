@@ -10,49 +10,68 @@ using Rehi.Domain.Subscriptions;
 using Rehi.Domain.Users;
 
 namespace Rehi.Application.Subscriptions.CreateSubscription;
-
 public abstract class CreateSubscription
 {
-    public record Command(Guid SubscriptionPlanId,string PayPalPlanId, string Provider) : ICommand<Response>;
+    public record Command(Guid SubscriptionPlanId, string PayPalPlanId, string Provider) : ICommand<Response>;
 
-    public record Response(
-        string ApprovalUrl,
-        string SubscriptionId,
-        string Provider
-    );
+    public record Response(string ApprovalUrl, string SubscriptionId, string Provider);
 
-    internal class Handler(IDbContext dbContext, IUserContext userContext, IPaymentFactory paymentFactory) : ICommandHandler<Command, Response>
+    internal class Handler(
+        IDbContext dbContext, 
+        IUserContext userContext, 
+        IPaymentFactory paymentFactory
+    ) : ICommandHandler<Command, Response>
     {
         public async Task<Result<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var userEmail = userContext.Email;
-            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email ==userEmail, cancellationToken);
+            var user = await dbContext.Users
+                .SingleOrDefaultAsync(u => u.Email == userContext.Email, cancellationToken);
+            
             if (user is null)
-            {
                 return Result.Failure<Response>(UserErrors.NotFound);
-            }
-            var paymentService = paymentFactory.Create(request.Provider);
-            var result = await paymentService.CreateSubscriptionAsync(request.PayPalPlanId);
-            var subscriptionPlan = await dbContext.SubscriptionPlans.SingleOrDefaultAsync(sp => sp.Id == request.SubscriptionPlanId, cancellationToken);
-            if (subscriptionPlan is null)
-            {
+            
+            var plan = await dbContext.SubscriptionPlans
+                .SingleOrDefaultAsync(sp => sp.Id == request.SubscriptionPlanId, cancellationToken);
+            
+            if (plan is null)
                 return Result.Failure<Response>(SubscriptionErrors.NotFound);
-            }
-            var subscription = new UserSubscription()
+
+            var hasActiveSubscription = await dbContext.UserSubscriptions
+                .AnyAsync(s => 
+                    s.UserId == user.Id && 
+                    (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Pending),
+                    cancellationToken);
+
+            if (hasActiveSubscription)
+                return Result.Failure<Response>(SubscriptionErrors.AlreadyExists);
+
+            var paymentService = paymentFactory.Create(request.Provider);
+            var paypalResult = await paymentService.CreateSubscriptionAsync(request.PayPalPlanId);
+
+            if (!paypalResult.Success)
+                return Result.Failure<Response>(SubscriptionErrors.FailedToCreate);
+
+            var subscription = new UserSubscription
             {
                 UserId = user.Id,
-                PaymentProvider = request.Provider,
                 SubscriptionPlanId = request.SubscriptionPlanId,
+                PaymentProvider = request.Provider,
+                PayPalSubscriptionId = paypalResult.SubscriptionId,
                 Status = SubscriptionStatus.Pending,
-                PayPalSubscriptionId = result.SubscriptionId,
                 StartDate = DateTime.UtcNow,
-                EndDate = DateTime.UtcNow.AddDays(subscriptionPlan.DurationDays)
+                EndDate = DateTime.UtcNow.AddDays(plan.DurationDays),
+                CurrentPeriodEnd = DateTime.UtcNow.AddDays(plan.DurationDays),
+                AutoRenew = true
             };
-            
+
             dbContext.UserSubscriptions.Add(subscription);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return new Response(result.ApprovalUrl, result.SubscriptionId, request.Provider);
+            return new Response(
+                paypalResult.ApprovalUrl, 
+                paypalResult.SubscriptionId, 
+                request.Provider
+            );
         }
     }
 }

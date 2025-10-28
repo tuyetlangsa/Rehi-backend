@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Payments;
 using Rehi.Domain.Payment;
@@ -17,11 +18,13 @@ public class PayPalPaymentService : IPaymentService
     private readonly ILogger<PayPalPaymentService> _logger;
     private readonly PayPalSettings _settings;
 
-    public PayPalPaymentService(HttpClient httpClient, ILogger<PayPalPaymentService> logger, IConfiguration configuration)
+    public PayPalPaymentService(HttpClient httpClient, ILogger<PayPalPaymentService> logger,
+        IConfiguration configuration)
     {
         _httpClient = httpClient;
         _logger = logger;
-        _settings = configuration.GetSection("PayPalSettings").Get<PayPalSettings>() ?? throw new ArgumentNullException(nameof(PayPalSettings));
+        _settings = configuration.GetSection("PayPalSettings").Get<PayPalSettings>() ??
+                    throw new ArgumentNullException(nameof(PayPalSettings));
     }
 
     private async Task<string> GetAccessTokenAsync()
@@ -31,7 +34,8 @@ public class PayPalPaymentService : IPaymentService
             Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_settings.ClientId}:{_settings.ClientSecret}"));
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/oauth2/token");
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
-        request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8, "application/x-www-form-urlencoded");
+        request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8,
+            "application/x-www-form-urlencoded");
 
         var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
@@ -41,38 +45,40 @@ public class PayPalPaymentService : IPaymentService
 
         return token.access_token;
     }
-    
-    private static PaymentResult MapToPaymentResult(string resultJson)
-    {
-        // 1. Deserialize the raw JSON string into the PayPal-specific structure
-        var payPalResponse = JsonSerializer.Deserialize<PayPalSubscriptionResponse>(resultJson);
 
-        // Handle case where deserialization fails or returns null
-        if (payPalResponse == null)
+    private PaymentCreateResult MapToPaymentResult(string json)
+    {
+        var options = new JsonSerializerOptions
         {
-            throw new InvalidOperationException("Failed to deserialize PayPal subscription response.");
+            PropertyNameCaseInsensitive = true
+        };
+        var response = JsonSerializer.Deserialize<PayPalSubscriptionResponse>(json, options);
+
+        if (response is null)
+        {
+            return new PaymentCreateResult
+            {
+                Success = false,
+                Message = "Failed to parse PayPal response"
+            };
         }
 
-        // 2. Extract the ApprovalUrl by finding the link with "rel": "approve"
-        string approvalUrl = payPalResponse.links?
-            // Find the link where the 'rel' property is "approve" (case-insensitive)
-            .FirstOrDefault(l => l.rel?.Equals("approve", StringComparison.OrdinalIgnoreCase) == true)?
-            // Get the 'href' property of that link
-            .href;
+        var approvalUrl = response.links
+            ?.FirstOrDefault(l => l.rel == "approve")
+            ?.href ?? string.Empty;
 
-        // 3. Map the extracted data to the standard PaymentResult structure
-        var paymentResult = new PaymentResult
+        return new PaymentCreateResult
         {
-            SubscriptionId = payPalResponse.id,
-            Status = payPalResponse.status,
+            Success = true,
+            Message = "Subscription created successfully",
+            SubscriptionId = response.id,
             ApprovalUrl = approvalUrl,
-            Provider = "PayPal" // Hardcode provider name
+            Status = response.status,
+            Provider = "PayPal"
         };
-
-        return paymentResult;
     }
 
-    public async Task<PaymentResult> CreateSubscriptionAsync(string planId)
+    public async Task<PaymentCreateResult> CreateSubscriptionAsync(string planId)
     {
         var token = await GetAccessTokenAsync();
 
@@ -89,18 +95,64 @@ public class PayPalPaymentService : IPaymentService
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/billing/subscriptions");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-        
+
         var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadAsStringAsync();
         return MapToPaymentResult(result);
     }
-    
+
+    public async Task<PaymentCancelResult> CancelSubscriptionAsync(PaymentCancelRequest cancelRequest)
+    {
+        var token = await GetAccessTokenAsync();
+
+        _logger.LogInformation("Sending PATCH request to cancel/update PayPal subscription {SubscriptionId}",
+            cancelRequest.SubscriptionId);
+
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"{_settings.BaseUrl}/v1/billing/subscriptions/{cancelRequest.SubscriptionId}/cancel");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var postPayload = new JObject
+            {
+                ["reason"] = cancelRequest.Reason
+            };
+
+
+        var jsonPayload = postPayload.ToString();
+        request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        _logger.LogDebug(" Post Payload: {Payload}", jsonPayload);
+
+        var response = await _httpClient.SendAsync(request);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        _logger.LogDebug("📨 PayPal Response: {StatusCode} - {Content}", response.StatusCode, responseContent);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError(
+                "Failed to update subscription {SubscriptionId}. Status: {StatusCode}, Response: {Response}",
+                cancelRequest.SubscriptionId, response.StatusCode, responseContent);
+            throw new Exception($"Failed to update subscription: {response.StatusCode}, {responseContent}");
+        }
+
+        _logger.LogInformation("Successfully updated PayPal subscription {SubscriptionId}",
+            cancelRequest.SubscriptionId);
+
+        return new PaymentCancelResult
+        {
+            Success = true,
+            Message = "Subscription updated successfully"
+        };
+    }
+
     public async Task<PayPalSubscriptionDetails> GetSubscriptionAsync(string subscriptionId)
     {
         var token = await GetAccessTokenAsync();
-        var request = new HttpRequestMessage(HttpMethod.Get, $"{_settings.BaseUrl}/v1/billing/subscriptions/{subscriptionId}");
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            $"{_settings.BaseUrl}/v1/billing/subscriptions/{subscriptionId}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _httpClient.SendAsync(request);
@@ -108,17 +160,5 @@ public class PayPalPaymentService : IPaymentService
 
         var result = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<PayPalSubscriptionDetails>(result);
-    }
-
-    public async Task CancelSubscriptionAsync(string subscriptionId)
-    {
-        var token = await GetAccessTokenAsync();
-
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/billing/subscriptions/{subscriptionId}/cancel");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Content = new StringContent("{\"reason\":\"User cancelled manually\"}", Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
     }
 }

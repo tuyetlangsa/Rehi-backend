@@ -4,5 +4,6 @@ namespace Rehi.Application.Abstraction.Payments;
 
 public interface IPaymentService
 {
-    Task<PaymentResult> CreateSubscriptionAsync(string planId);
+    Task<PaymentCreateResult> CreateSubscriptionAsync(string planId);
+    Task<PaymentCancelResult> CancelSubscriptionAsync(PaymentCancelRequest request);
 }

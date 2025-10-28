@@ -25,7 +25,6 @@ public abstract class ReceivePayPalWebhook
     internal class Handler(
         IDbContext dbContext,
         ILogger<ReceivePayPalWebhook> logger,
-        IHttpClientFactory httpClientFactory,
         IPayPalWebHookService payPalWebHookService
     ) : ICommandHandler<Command, Response>
     {
@@ -45,38 +44,16 @@ public abstract class ReceivePayPalWebhook
                 return Result.Failure<Response>(PayPalWebhookErrors.NotFound);
             }
 
-            var eventType = result.EventType;
-            var subscriptionId = result.PaypalSubscriptionId;
-
-            // Handle event types
-            switch (eventType)
-            {
-                case "BILLING.SUBSCRIPTION.ACTIVATED":
-                    await HandleSubscriptionActivatedAsync(subscriptionId);
-                    break;
-
-                case "BILLING.SUBSCRIPTION.CANCELLED":
-                    await HandleSubscriptionCancelledAsync(subscriptionId);
-                    break;
-
-                case "BILLING.SUBSCRIPTION.SUSPENDED":
-                    await HandleSubscriptionSuspendedAsync(subscriptionId);
-                    break;
-
-                default:
-                    logger.LogInformation("Ignored event type: {EventType}", eventType);
-                    break;
-            }
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-
+            await ProcessEventAsync(result.EventType, result.PaypalSubscriptionId, cancellationToken);
+            
             return new Response("success");
         }
 
-        private async Task HandleSubscriptionActivatedAsync(string subscriptionId)
+        private async Task ProcessEventAsync(string eventType, string subscriptionId, CancellationToken cancellationToken)
         {
             var subscription = await dbContext.UserSubscriptions
-                .SingleOrDefaultAsync(us => us.PayPalSubscriptionId == subscriptionId);
+                .Include(s => s.SubscriptionPlan)
+                .SingleOrDefaultAsync(us => us.PayPalSubscriptionId == subscriptionId, cancellationToken);
 
             if (subscription is null)
             {
@@ -84,38 +61,61 @@ public abstract class ReceivePayPalWebhook
                 return;
             }
 
+            var handled = eventType switch
+            {
+                "BILLING.SUBSCRIPTION.ACTIVATED" => HandleActivated(subscription),
+                "BILLING.SUBSCRIPTION.CANCELLED" => HandleCancelled(subscription),
+                "BILLING.SUBSCRIPTION.SUSPENDED" => HandleSuspended(subscription),
+                "PAYMENT.SALE.COMPLETED" => HandlePaymentCompleted(subscription),
+                _ => false
+            };
+
+            if (handled)
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                logger.LogInformation("Processed {EventType} for subscription: {Id}", eventType, subscriptionId);
+            }
+            else
+            {
+                logger.LogInformation("Ignored event type: {EventType}", eventType);
+            }
+        }
+
+        private bool HandleActivated(UserSubscription subscription)
+        {
             subscription.Status = SubscriptionStatus.Active;
-            logger.LogInformation("Activated subscription: {Id}", subscriptionId);
+            subscription.AutoRenew = true;
+            subscription.CurrentPeriodEnd = CalculateNextPeriodEnd(subscription);
+            return true;
         }
 
-        private async Task HandleSubscriptionCancelledAsync(string subscriptionId)
+        private bool HandleCancelled(UserSubscription subscription)
         {
-            var subscription = await dbContext.UserSubscriptions
-                .SingleOrDefaultAsync(us => us.PayPalSubscriptionId == subscriptionId);
-
-            if (subscription is null)
-            {
-                logger.LogWarning("Subscription not found for PayPal ID: {Id}", subscriptionId);
-                return;
-            }
-
             subscription.Status = SubscriptionStatus.Cancelled;
-            logger.LogInformation("Cancelled subscription: {Id}", subscriptionId);
+            subscription.CancelledAt = DateTime.UtcNow;
+            subscription.AutoRenew = false;
+            return true;
         }
 
-        private async Task HandleSubscriptionSuspendedAsync(string subscriptionId)
+        private bool HandleSuspended(UserSubscription subscription)
         {
-            var subscription = await dbContext.UserSubscriptions
-                .SingleOrDefaultAsync(us => us.PayPalSubscriptionId == subscriptionId);
+            subscription.Status = SubscriptionStatus.Suspended;
+            subscription.AutoRenew = false;
+            return true;
+        }
 
-            if (subscription is null)
-            {
-                logger.LogWarning("Subscription not found for PayPal ID: {Id}", subscriptionId);
-                return;
-            }
+        private bool HandlePaymentCompleted(UserSubscription subscription)
+        {
+            subscription.Status = SubscriptionStatus.Active;
+            subscription.CurrentPeriodEnd = CalculateNextPeriodEnd(subscription);
+            subscription.AutoRenew = true;
+            return true;
+        }
 
-            subscription.Status = SubscriptionStatus.Cancelled;
-            logger.LogInformation("Suspended subscription: {Id}", subscriptionId);
+        private DateTime CalculateNextPeriodEnd(UserSubscription subscription)
+        {
+            var durationDays = subscription.SubscriptionPlan?.DurationDays ?? 30;
+            return DateTime.UtcNow.AddDays(durationDays);
         }
     }
 }
