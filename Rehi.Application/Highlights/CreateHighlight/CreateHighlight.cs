@@ -57,7 +57,8 @@ public abstract class CreateHighlight
                 UserId = user!.Id,
                 CreateBy = command.CreateBy
             };
-            
+
+            highlight.Raise(new HighlightCreatedDomainEvent(highlight.Id));
             dbContext.Highlights.Add(highlight);
             await dbContext.SaveChangesAsync(cancellationToken);
             return highlight.Id;

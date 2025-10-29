@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
+using Rehi.Domain.Flashcards;
 using Rehi.Domain.Highlights;
 using Rehi.Domain.Subscription;
 using Rehi.Domain.Tags;
@@ -30,4 +31,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; set; }
     public DbSet<UserSubscription> UserSubscriptions { get; set; }
     public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+    public DbSet<Flashcard> Flashcards { get; set; }
+    public DbSet<FlashCardReview> FlashCardReviews { get; set; }
 }
