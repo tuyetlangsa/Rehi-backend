@@ -32,10 +32,14 @@ public abstract class DeleteHighlight
             {
                 return  Result.Failure(HighlightErrors.NotFound);
             }
-
+            
+       
             highlightExisted.IsDeleted = true;
             var updateAt = DateTimeOffset.FromUnixTimeMilliseconds(command.UpdateAt);
-
+            if (updateAt < highlightExisted.UpdateAt)
+            {
+                return Result.Failure(CommonErrors.StaleRequest);
+            }
             highlightExisted.UpdateAt = updateAt;
             
             await dbContext.SaveChangesAsync(cancellationToken);

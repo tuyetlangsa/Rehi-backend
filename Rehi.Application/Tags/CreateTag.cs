@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Data;
@@ -9,7 +10,7 @@ namespace Rehi.Application.Tags;
 
 public abstract class CreateTag
 {
-    public record Command(string Name, DateTimeOffset CreateAt) : ICommand<Guid>;
+    public record Command(string Name, long CreateAt) : ICommand<Guid>;
 
     internal sealed class Handler(IDbContext dbContext, IUserContext userContext) : ICommandHandler<Command, Guid>
     {
@@ -27,18 +28,26 @@ public abstract class CreateTag
             var user = await dbContext.Users
                 .SingleOrDefaultAsync(u => u.Email == userContext.Email, 
                     cancellationToken);
-            
+            var createAt = DateTimeOffset.FromUnixTimeMilliseconds(request.CreateAt);
             var tag = new Tag()
             {
                 Id = Guid.NewGuid(),
                 Name = request.Name,
                 UserId = user!.Id,
-                CreateAt =  request.CreateAt
+                CreateAt =  createAt
             };
 
             dbContext.Tags.Add(tag);
             await dbContext.SaveChangesAsync(cancellationToken);
             return Result.Success(tag.Id);
+        }
+    }
+    internal sealed class Validator : AbstractValidator<Command>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Name).NotEmpty();
+            RuleFor(x => x.CreateAt).NotEmpty();
         }
     }
 }
