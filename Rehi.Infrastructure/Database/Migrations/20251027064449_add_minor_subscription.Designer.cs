@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Rehi.Infrastructure.Database;
@@ -11,9 +12,11 @@ using Rehi.Infrastructure.Database;
 namespace Rehi.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251027064449_test")]
+    partial class test
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -167,81 +170,6 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.HasKey("OutboxMessageId", "Name");
 
                     b.ToTable("outbox_message_consumers", "public");
-                });
-
-            modelBuilder.Entity("Rehi.Domain.Flashcards.FlashCardReview", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<double>("EaseFactorAfter")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("EaseFactorBefore")
-                        .HasColumnType("double precision");
-
-                    b.Property<byte>("Feedback")
-                        .HasColumnType("smallint");
-
-                    b.Property<Guid>("FlashcardId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("IntervalAfter")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("IntervalBefore")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("ReviewedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FlashcardId");
-
-                    b.ToTable("FlashCardReviews", "public");
-                });
-
-            modelBuilder.Entity("Rehi.Domain.Flashcards.Flashcard", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double>("EaseFactor")
-                        .HasColumnType("double precision");
-
-                    b.Property<Guid>("HighlightId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Interval")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastReviewedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<byte>("State")
-                        .HasColumnType("smallint");
-
-                    b.Property<int>("StepIndex")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("HighlightId")
-                        .IsUnique();
-
-                    b.ToTable("Flashcards", "public");
                 });
 
             modelBuilder.Entity("Rehi.Domain.Highlights.Highlight", b =>
@@ -444,17 +372,12 @@ namespace Rehi.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("AutoRenew")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CurrentPeriodEnd")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExternalSubscriptionId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("PayPalSubscriptionId")
                         .IsRequired()
@@ -511,28 +434,6 @@ namespace Rehi.Infrastructure.Database.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Rehi.Domain.Flashcards.FlashCardReview", b =>
-                {
-                    b.HasOne("Rehi.Domain.Flashcards.Flashcard", "Flashcard")
-                        .WithMany("Reviews")
-                        .HasForeignKey("FlashcardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Flashcard");
-                });
-
-            modelBuilder.Entity("Rehi.Domain.Flashcards.Flashcard", b =>
-                {
-                    b.HasOne("Rehi.Domain.Highlights.Highlight", "Highlight")
-                        .WithOne()
-                        .HasForeignKey("Rehi.Domain.Flashcards.Flashcard", "HighlightId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Highlight");
-                });
-
             modelBuilder.Entity("Rehi.Domain.Highlights.Highlight", b =>
                 {
                     b.HasOne("Rehi.Domain.Articles.Article", "Article")
@@ -572,7 +473,7 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.HasOne("Rehi.Domain.Users.User", "User")
                         .WithMany("UserSubscriptions")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("SubscriptionPlan");
@@ -583,11 +484,6 @@ namespace Rehi.Infrastructure.Database.Migrations
             modelBuilder.Entity("Rehi.Domain.Articles.Article", b =>
                 {
                     b.Navigation("Highlights");
-                });
-
-            modelBuilder.Entity("Rehi.Domain.Flashcards.Flashcard", b =>
-                {
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("Rehi.Domain.Subscription.SubscriptionPlan", b =>

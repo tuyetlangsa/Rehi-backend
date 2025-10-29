@@ -3,6 +3,7 @@ using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
 using Rehi.Domain.Flashcards;
 using Rehi.Domain.Highlights;
+using Rehi.Domain.Subscription;
 using Rehi.Domain.Tags;
 using Rehi.Domain.Users;
 
@@ -16,10 +17,13 @@ public interface IDbContext
     DbSet<Tag> Tags { get; set; }
     DbSet<ArticleTag> ArticleTags { get; set; }
     DbSet<Highlight> Highlights { get; set; }
+    DbSet<UserSubscription> UserSubscriptions { get; set; }
+    DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; set; }
     public DbSet<Flashcard> Flashcards { get; set; }
 
     public DbSet<FlashCardReview> FlashCardReviews { get; set; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

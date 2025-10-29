@@ -5,5 +5,6 @@ public enum SubscriptionStatus
     Pending,
     Active,
     Expired,
-    Cancelled
+    Cancelled,
+    Suspended,
 }
