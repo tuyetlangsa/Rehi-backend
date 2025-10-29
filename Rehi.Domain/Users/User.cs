@@ -14,5 +14,5 @@ public class User : Entity
     public DateTime ScheduleTime { get; set; }
     
     public virtual ICollection<Highlight> Highlights { get; set; } = new List<Highlight>();
-
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();  
 }

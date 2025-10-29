@@ -33,9 +33,4 @@
       <ProjectReference Include="..\Rehi.Application\Rehi.Application.csproj" />
       <ProjectReference Include="..\Rehi.Domain\Rehi.Domain.csproj" />
     </ItemGroup>
-
-
-    <ItemGroup>
-      <Folder Include="Database\Migrations\" />
-    </ItemGroup>
 </Project>

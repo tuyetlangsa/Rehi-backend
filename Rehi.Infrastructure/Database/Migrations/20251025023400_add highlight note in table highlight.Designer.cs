@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Rehi.Infrastructure.Database;
@@ -11,9 +12,11 @@ using Rehi.Infrastructure.Database;
 namespace Rehi.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251025023400_add highlight note in table highlight")]
+    partial class addhighlightnoteintablehighlight
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -229,83 +232,6 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.ToTable("Highlights", "public");
                 });
 
-            modelBuilder.Entity("Rehi.Domain.Subscription.SubscriptionPlan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("text");
-
-                    b.Property<int>("DurationDays")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("PaypalPlanId")
-                        .HasMaxLength(100)
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SubscriptionPlans", "public");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
-                            Description = "Perfect for new users. Includes: Basic note taking, Save up to 10 articles per day, Manual flashcard creation, Unlimited access, Cross device access.",
-                            DurationDays = 30,
-                            Name = "Freemium (Monthly)",
-                            Price = 0m
-                        },
-                        new
-                        {
-                            Id = new Guid("3fa85f64-5717-4562-b3fc-2c963f66afa5"),
-                            Description = "Ideal for university students or researchers. Includes: Smart notes powered by AI, Auto flashcards, Quick note formatting, Spaced repetition reminders, Unlimited materials.",
-                            DurationDays = 30,
-                            Name = "Premium Individual (Monthly)",
-                            PaypalPlanId = "P-4XP87117T0561114KND6LNKQ",
-                            Price = 2.9m
-                        },
-                        new
-                        {
-                            Id = new Guid("3fa85f64-5717-4562-b3fc-2c963f66afa4"),
-                            Description = "Designed for study groups or teams. Includes: All Premium features, Shared group notes, Group flashcards, Personalized suggestions, Group dashboard.",
-                            DurationDays = 30,
-                            Name = "Group Plan (Monthly)",
-                            PaypalPlanId = "P-06H31651K2C745930END6LNYA",
-                            Price = 10m
-                        },
-                        new
-                        {
-                            Id = new Guid("3fa85f64-5717-4562-b3fc-2c963f66afa3"),
-                            Description = "Ideal for university students or researchers. Includes: Smart notes powered by AI, Auto flashcards, Mind maps, Translation, PDF export, Unlimited materials.",
-                            DurationDays = 365,
-                            Name = "Premium Individual (Yearly)",
-                            PaypalPlanId = "P-5XF55308K77570807ND6LOKI",
-                            Price = 29.9m
-                        },
-                        new
-                        {
-                            Id = new Guid("3fa85f64-5717-4562-b3fc-2c963f66afa2"),
-                            Description = "Tailored for schools or organizations. Includes: LMS, Admin dashboard, Role-based access, Customization, Full onboarding & support.",
-                            DurationDays = 365,
-                            Name = "Business Plan (Yearly)",
-                            PaypalPlanId = "P-2HE25455557244027ND6LOSQ",
-                            Price = 21m
-                        });
-                });
-
             modelBuilder.Entity("Rehi.Domain.Tags.Tag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -363,53 +289,6 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.ToTable("Users", "public");
                 });
 
-            modelBuilder.Entity("Rehi.Domain.Users.UserSubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("AutoRenew")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CurrentPeriodEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PayPalSubscriptionId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PaymentProvider")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SubscriptionPlanId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubscriptionPlanId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserSubscriptions", "public");
-                });
-
             modelBuilder.Entity("Rehi.Domain.Articles.Article", b =>
                 {
                     b.HasOne("Rehi.Domain.Users.User", "User")
@@ -464,33 +343,9 @@ namespace Rehi.Infrastructure.Database.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Rehi.Domain.Users.UserSubscription", b =>
-                {
-                    b.HasOne("Rehi.Domain.Subscription.SubscriptionPlan", "SubscriptionPlan")
-                        .WithMany("UserSubscriptions")
-                        .HasForeignKey("SubscriptionPlanId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Rehi.Domain.Users.User", "User")
-                        .WithMany("UserSubscriptions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("SubscriptionPlan");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Rehi.Domain.Articles.Article", b =>
                 {
                     b.Navigation("Highlights");
-                });
-
-            modelBuilder.Entity("Rehi.Domain.Subscription.SubscriptionPlan", b =>
-                {
-                    b.Navigation("UserSubscriptions");
                 });
 
             modelBuilder.Entity("Rehi.Domain.Users.User", b =>
@@ -500,8 +355,6 @@ namespace Rehi.Infrastructure.Database.Migrations
                     b.Navigation("Highlights");
 
                     b.Navigation("Tags");
-
-                    b.Navigation("UserSubscriptions");
                 });
 #pragma warning restore 612, 618
         }

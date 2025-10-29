@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Quartz;
@@ -11,13 +12,20 @@ using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Email;
+using Rehi.Application.Abstraction.Payments;
+using Rehi.Application.Abstraction.Paypal;
 using Rehi.Domain.Common;
+using Rehi.Domain.Subscription;
 using Rehi.Domain.Users;
 using Rehi.Infrastructure.Authentication;
 using Rehi.Infrastructure.Clock;
 using Rehi.Infrastructure.Database;
 using Rehi.Infrastructure.EmailService;
 using Rehi.Infrastructure.Outbox;
+using Rehi.Infrastructure.Payment;
+using Rehi.Infrastructure.Payment.Paypal;
+using Rehi.Infrastructure.Paypal;
+using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace Rehi.Infrastructure;
 
@@ -48,7 +56,12 @@ public static class DependencyInjection
         services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<ISendEmailService, SendEmailService>();
-
+        services.AddScoped<IPaymentFactory, PaymentFactory>();
+        services.AddScoped<IPaymentService, PayPalPaymentService>();
+        services.AddScoped<IPayPalWebHookService, PayPalWebhookService>();
+        //subscription
+        services.AddPayPalHttpClient(configuration);
+        //need to refactor later
         services.AddQuartz(configurator =>
         {
             var scheduler = Guid.NewGuid();
@@ -134,4 +147,5 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         return services;
     }
+
 }

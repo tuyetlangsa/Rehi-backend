@@ -3,6 +3,7 @@ using Rehi.Apis.Extensions;
 using Rehi.Apis.Middleware;
 using Rehi.Application;
 using Rehi.Infrastructure;
+using Rehi.Infrastructure.Database;
 using Serilog;
 
 namespace Rehi.Apis;
@@ -23,7 +24,7 @@ public class Program
         builder.Services.AddAuthorization();
 
         WebApplication app = builder.Build();
-
+        
         app.UseSwaggerWithUi();
         app.ApplyMigrations();
         app.UseCors();
