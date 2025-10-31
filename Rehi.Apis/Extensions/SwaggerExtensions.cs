@@ -11,7 +11,7 @@ public static class SwaggerExtensions
         {
             o.CustomSchemaIds(id => id.FullName!.Replace('+', '-'));
 
-            var securityScheme = new OpenApiSecurityScheme()
+            var securityScheme = new OpenApiSecurityScheme
             {
                 Name = "JWT Authentication",
                 Description = "Enter your JWT token in this field",
@@ -43,7 +43,7 @@ public static class SwaggerExtensions
 
         return services;
     }
-    
+
     public static IApplicationBuilder UseSwaggerWithUi(this WebApplication app)
     {
         app.UseSwagger();
@@ -51,5 +51,4 @@ public static class SwaggerExtensions
 
         return app;
     }
-    
 }

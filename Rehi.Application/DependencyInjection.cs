@@ -1,5 +1,3 @@
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Rehi.Application.Abstraction.Behaviors;
@@ -21,7 +19,7 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
-        
+
         return services;
     }
 }

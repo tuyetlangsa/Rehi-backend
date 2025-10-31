@@ -15,25 +15,22 @@ public abstract class CreateTag
     {
         public async Task<Result<Guid>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var isExisted = 
+            var isExisted =
                 await dbContext.Tags
-                    .SingleOrDefaultAsync(t => t.Name == request.Name, 
-                        cancellationToken: cancellationToken);
-            if (isExisted is not null)
-            {
-                return Result.Failure<Guid>(TagErrors.AlreadyExisted);
-            }
+                    .SingleOrDefaultAsync(t => t.Name == request.Name,
+                        cancellationToken);
+            if (isExisted is not null) return Result.Failure<Guid>(TagErrors.AlreadyExisted);
 
             var user = await dbContext.Users
-                .SingleOrDefaultAsync(u => u.Email == userContext.Email, 
+                .SingleOrDefaultAsync(u => u.Email == userContext.Email,
                     cancellationToken);
-            
-            var tag = new Tag()
+
+            var tag = new Tag
             {
                 Id = Guid.NewGuid(),
                 Name = request.Name,
                 UserId = user!.Id,
-                CreateAt =  request.CreateAt
+                CreateAt = request.CreateAt
             };
 
             dbContext.Tags.Add(tag);

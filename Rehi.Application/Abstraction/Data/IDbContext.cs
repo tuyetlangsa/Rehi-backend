@@ -10,8 +10,8 @@ namespace Rehi.Application.Abstraction.Data;
 
 public interface IDbContext
 {
-    DbSet<Article> Articles { get; set; } 
-    DbSet<User> Users { get; set; } 
+    DbSet<Article> Articles { get; set; }
+    DbSet<User> Users { get; set; }
 
     DbSet<Tag> Tags { get; set; }
     DbSet<ArticleTag> ArticleTags { get; set; }
@@ -20,6 +20,6 @@ public interface IDbContext
     DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<OutboxMessageConsumer> OutboxMessageConsumers { get; set; }
-    
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

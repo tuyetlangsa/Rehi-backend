@@ -3,9 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
-using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Payments;
 using Rehi.Domain.Payment;
 using Rehi.Domain.Subscription;
@@ -25,57 +23,6 @@ public class PayPalPaymentService : IPaymentService
         _logger = logger;
         _settings = configuration.GetSection("PayPalSettings").Get<PayPalSettings>() ??
                     throw new ArgumentNullException(nameof(PayPalSettings));
-    }
-
-    private async Task<string> GetAccessTokenAsync()
-    {
-        _httpClient.DefaultRequestHeaders.Clear();
-        var authHeader =
-            Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_settings.ClientId}:{_settings.ClientSecret}"));
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/oauth2/token");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
-        request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8,
-            "application/x-www-form-urlencoded");
-
-        var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-
-        var result = await response.Content.ReadAsStringAsync();
-        var token = JsonSerializer.Deserialize<PayPalTokenResponse>(result);
-
-        return token.access_token;
-    }
-
-    private PaymentCreateResult MapToPaymentResult(string json)
-    {
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
-        var response = JsonSerializer.Deserialize<PayPalSubscriptionResponse>(json, options);
-
-        if (response is null)
-        {
-            return new PaymentCreateResult
-            {
-                Success = false,
-                Message = "Failed to parse PayPal response"
-            };
-        }
-
-        var approvalUrl = response.links
-            ?.FirstOrDefault(l => l.rel == "approve")
-            ?.href ?? string.Empty;
-
-        return new PaymentCreateResult
-        {
-            Success = true,
-            Message = "Subscription created successfully",
-            SubscriptionId = response.id,
-            ApprovalUrl = approvalUrl,
-            Status = response.status,
-            Provider = "PayPal"
-        };
     }
 
     public async Task<PaymentCreateResult> CreateSubscriptionAsync(string planId)
@@ -115,9 +62,9 @@ public class PayPalPaymentService : IPaymentService
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var postPayload = new JObject
-            {
-                ["reason"] = cancelRequest.Reason
-            };
+        {
+            ["reason"] = cancelRequest.Reason
+        };
 
 
         var jsonPayload = postPayload.ToString();
@@ -145,6 +92,56 @@ public class PayPalPaymentService : IPaymentService
         {
             Success = true,
             Message = "Subscription updated successfully"
+        };
+    }
+
+    private async Task<string> GetAccessTokenAsync()
+    {
+        _httpClient.DefaultRequestHeaders.Clear();
+        var authHeader =
+            Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_settings.ClientId}:{_settings.ClientSecret}"));
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/oauth2/token");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
+        request.Content = new StringContent("grant_type=client_credentials", Encoding.UTF8,
+            "application/x-www-form-urlencoded");
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadAsStringAsync();
+        var token = JsonSerializer.Deserialize<PayPalTokenResponse>(result) ??
+                    throw new Exception("Failed to parse token");
+
+        return token.access_token;
+    }
+
+    private PaymentCreateResult MapToPaymentResult(string json)
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+        var response = JsonSerializer.Deserialize<PayPalSubscriptionResponse>(json, options);
+
+        if (response is null)
+            return new PaymentCreateResult
+            {
+                Success = false,
+                Message = "Failed to parse PayPal response"
+            };
+
+        var approvalUrl = response.links
+            ?.FirstOrDefault(l => l.rel == "approve")
+            ?.href ?? string.Empty;
+
+        return new PaymentCreateResult
+        {
+            Success = true,
+            Message = "Subscription created successfully",
+            SubscriptionId = response.id,
+            ApprovalUrl = approvalUrl,
+            Status = response.status,
+            Provider = "PayPal"
         };
     }
 

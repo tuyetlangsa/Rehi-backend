@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
 using Rehi.Application.Abstraction.Messaging;
@@ -17,26 +16,21 @@ internal sealed class ValidationPipelineBehavior<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        ValidationFailure[] validationFailures = await ValidateAsync(request);
+        var validationFailures = await ValidateAsync(request);
 
-        if (validationFailures.Length == 0)
-        {
-            return await next();
-        }
+        if (validationFailures.Length == 0) return await next();
 
         if (typeof(TResponse).IsGenericType &&
             typeof(TResponse).GetGenericTypeDefinition() == typeof(Result<>))
         {
-            Type resultType = typeof(TResponse).GetGenericArguments()[0];
+            var resultType = typeof(TResponse).GetGenericArguments()[0];
 
-            MethodInfo? failureMethod = typeof(Result<>)
+            var failureMethod = typeof(Result<>)
                 .MakeGenericType(resultType)
                 .GetMethod(nameof(Result<object>.ValidationFailure));
 
             if (failureMethod is not null)
-            {
                 return (TResponse)failureMethod.Invoke(null, [CreateValidationError(validationFailures)]);
-            }
         }
         else if (typeof(TResponse) == typeof(Result))
         {
@@ -48,10 +42,7 @@ internal sealed class ValidationPipelineBehavior<TRequest, TResponse>(
 
     private async Task<ValidationFailure[]> ValidateAsync(TRequest request)
     {
-        if (!validators.Any())
-        {
-            return [];
-        }
+        if (!validators.Any()) return [];
 
         var context = new ValidationContext<TRequest>(request);
 
@@ -66,6 +57,9 @@ internal sealed class ValidationPipelineBehavior<TRequest, TResponse>(
         return validationFailures;
     }
 
-    private static ValidationError CreateValidationError(ValidationFailure[] validationFailures) =>
-        new(validationFailures.Select(f => Error.BadRequest(f.ErrorCode,f.ErrorMessage)).ToArray());
+    private static ValidationError CreateValidationError(ValidationFailure[] validationFailures)
+    {
+        return new ValidationError(validationFailures.Select(f => Error.BadRequest(f.ErrorCode, f.ErrorMessage))
+            .ToArray());
+    }
 }

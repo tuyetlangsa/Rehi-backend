@@ -11,8 +11,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasKey(u => u.Id);
         builder.HasIndex(u => u.Email).IsUnique();
         builder.Property(u => u.FullName);
-        
-        builder.HasMany<UserSubscription>(u => u.UserSubscriptions)
+
+        builder.HasMany(u => u.UserSubscriptions)
             .WithOne(us => us.User)
             .HasForeignKey(us => us.UserId)
             .IsRequired()

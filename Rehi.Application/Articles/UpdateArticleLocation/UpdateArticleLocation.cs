@@ -12,26 +12,20 @@ namespace Rehi.Application.Articles.UpdateArticleLocation;
 public abstract class UpdateArticleLocation
 {
     public record Command(Guid ArticleId, string Location, long UpdateAt) : ICommand;
-    
+
     internal class Handler(IDbContext dbContext, IUserContext userContext) : ICommandHandler<Command>
     {
         public async Task<Result> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEmail = userContext.Email;
-            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userEmail , cancellationToken);
+            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userEmail, cancellationToken);
 
-            if (user is null)
-            {
-                return Result.Failure(UserErrors.NotFound);
-            }
-            
+            if (user is null) return Result.Failure(UserErrors.NotFound);
+
             var articleExisted = await dbContext.Articles
-                .FirstOrDefaultAsync(a => command.ArticleId == a.Id , cancellationToken);
+                .FirstOrDefaultAsync(a => command.ArticleId == a.Id, cancellationToken);
 
-            if (articleExisted is null)
-            {
-                return  Result.Failure(ArticleErrors.NotFound);
-            }
+            if (articleExisted is null) return Result.Failure(ArticleErrors.NotFound);
             var updateAt = DateTimeOffset.FromUnixTimeMilliseconds(command.UpdateAt);
 
             articleExisted.Location = command.Location switch
@@ -43,16 +37,16 @@ public abstract class UpdateArticleLocation
                 _ => throw new ArgumentOutOfRangeException()
             };
             articleExisted.UpdateAt = updateAt;
-            
+
             await dbContext.SaveChangesAsync(cancellationToken);
-            return  Result.Success();
+            return Result.Success();
         }
     }
-    
+
     internal sealed class Validator : AbstractValidator<Command>
     {
         public Validator()
-        { 
+        {
             RuleFor(x => x.ArticleId).NotEmpty();
             RuleFor(x => x.Location).NotEmpty();
         }

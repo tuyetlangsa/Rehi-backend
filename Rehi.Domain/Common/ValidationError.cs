@@ -10,8 +10,11 @@ public sealed record ValidationError : Error
     {
         Errors = errors;
     }
+
     public Error[] Errors { get; }
 
-    public static ValidationError FromResults(IEnumerable<Result> results) =>
-        new(results.Where(r => !r.IsSuccess).Select(r => r.Error).ToArray());
+    public static ValidationError FromResults(IEnumerable<Result> results)
+    {
+        return new ValidationError(results.Where(r => !r.IsSuccess).Select(r => r.Error).ToArray());
+    }
 }

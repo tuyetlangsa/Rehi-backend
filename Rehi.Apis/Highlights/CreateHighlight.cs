@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Rehi.Apis.Endpoints;
 using Rehi.Apis.Results;
-using Rehi.Application.Highlights;
 using Rehi.Application.Highlights.CreateHighlight;
 
 namespace Rehi.Apis.Highlights;
@@ -14,17 +13,17 @@ public class CreateHighlightEndpoint : IEndpoint
         app.MapPost("/highlights", async ([FromBody] Request request, ISender sender) =>
             {
                 var result = await sender.Send(new CreateHighlight.Command(
-                    request.Id, 
-                    request.Location, 
-                    request.Html, 
-                    request.Markdown, 
-                    request.PlainText, 
-                    request.ArticleId, 
+                    request.Id,
+                    request.Location,
+                    request.Html,
+                    request.Markdown,
+                    request.PlainText,
+                    request.ArticleId,
                     request.CreateAt,
                     request.Color,
                     request.CreateBy
-                    ));
-                
+                ));
+
                 return result.MatchCreated(id => $"/highlights/{id}");
             })
             .WithTags("Highlights")
@@ -41,7 +40,7 @@ public class CreateHighlightEndpoint : IEndpoint
         public string PlainText { get; set; }
         public Guid ArticleId { get; set; }
         public string Color { get; set; }
-        public long CreateAt  { get; set; }
+        public long CreateAt { get; set; }
         public string CreateBy { get; set; }
     }
 }

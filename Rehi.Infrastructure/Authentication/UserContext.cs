@@ -24,5 +24,5 @@ public class UserContext : IUserContext
             .HttpContext
             .User
             .GetEmail() ??
-    throw new ApplicationException("User email is unavailable");
+        throw new ApplicationException("User email is unavailable");
 }

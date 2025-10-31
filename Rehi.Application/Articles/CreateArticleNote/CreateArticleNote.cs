@@ -11,28 +11,22 @@ namespace Rehi.Application.Articles.CreateArticleNote;
 
 public abstract class CreateArticleNote
 {
-    public record Command(Guid ArticleId, string? Note, long SavedAt): ICommand;
-    
+    public record Command(Guid ArticleId, string? Note, long SavedAt) : ICommand;
+
 
     internal class Handler(IDbContext dbContext, IUserContext userContext) : ICommandHandler<Command>
     {
         public async Task<Result> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEmail = userContext.Email;
-            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userEmail , cancellationToken);
+            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userEmail, cancellationToken);
 
-            if (user is null)
-            {
-                return Result.Failure(UserErrors.NotFound);
-            }
-            
+            if (user is null) return Result.Failure(UserErrors.NotFound);
+
             var articleExisted = await dbContext.Articles
                 .SingleOrDefaultAsync(a => a.Id == command.ArticleId, cancellationToken);
 
-            if (articleExisted is null)
-            {
-                return Result.Failure(ArticleErrors.NotFound);
-            }
+            if (articleExisted is null) return Result.Failure(ArticleErrors.NotFound);
             var createAt = DateTimeOffset.FromUnixTimeMilliseconds(command.SavedAt);
 
             articleExisted!.Note = command.Note?.Trim();
@@ -41,7 +35,7 @@ public abstract class CreateArticleNote
             return Result.Success();
         }
     }
-    
+
     internal sealed class Validator : AbstractValidator<Command>
     {
         public Validator()

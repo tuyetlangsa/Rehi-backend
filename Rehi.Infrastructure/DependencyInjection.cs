@@ -4,10 +4,9 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Quartz;
+using Rehi.Application;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
@@ -15,8 +14,6 @@ using Rehi.Application.Abstraction.Email;
 using Rehi.Application.Abstraction.Payments;
 using Rehi.Application.Abstraction.Paypal;
 using Rehi.Domain.Common;
-using Rehi.Domain.Subscription;
-using Rehi.Domain.Users;
 using Rehi.Infrastructure.Authentication;
 using Rehi.Infrastructure.Clock;
 using Rehi.Infrastructure.Database;
@@ -33,12 +30,14 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration) =>
-        services
+        IConfiguration configuration)
+    {
+        return services
             .AddDomainEventHandlers()
             .AddDatabase(configuration)
             .AddHealthChecks(configuration)
             .AddAuthenticationInternal(configuration);
+    }
 
     private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
     {
@@ -75,21 +74,18 @@ public static class DependencyInjection
             configurator.UsePersistentStore(persistenceOptions =>
             {
                 persistenceOptions.UsePostgres(cfg =>
-                {
-                    cfg.ConnectionString = configuration.GetConnectionString("Database");
-                    cfg.TablePrefix = "public.qrtz_";
-                },
-                dataSourceName: "reminders");
+                    {
+                        cfg.ConnectionString = configuration.GetConnectionString("Database");
+                        cfg.TablePrefix = "public.qrtz_";
+                    },
+                    "reminders");
 
                 persistenceOptions.UseNewtonsoftJsonSerializer();
                 persistenceOptions.UseProperties = true;
             });
         });
 
-        services.AddQuartzHostedService(options =>
-        {
-            options.WaitForJobsToComplete = true;
-        });
+        services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
 
         return services;
     }
@@ -104,25 +100,26 @@ public static class DependencyInjection
 
     private static IServiceCollection AddDomainEventHandlers(this IServiceCollection services)
     {
-        Type[] domainEventHandlers = Application.AssemblyReference.Assembly
+        var domainEventHandlers = AssemblyReference.Assembly
             .GetTypes()
             .Where(t => t.IsAssignableTo(typeof(IDomainEventHandler)))
             .ToArray();
 
-        foreach (Type domainEventHandler in domainEventHandlers)
+        foreach (var domainEventHandler in domainEventHandlers)
         {
             services.TryAddScoped(domainEventHandler);
 
-            Type domainEvent = domainEventHandler
+            var domainEvent = domainEventHandler
                 .GetInterfaces()
                 .Single(i => i.IsGenericType)
                 .GetGenericArguments()
                 .Single();
 
-            Type closedIdempotentHandler = typeof(IdempotentDomainEventHandler<>).MakeGenericType(domainEvent);
+            var closedIdempotentHandler = typeof(IdempotentDomainEventHandler<>).MakeGenericType(domainEvent);
 
             services.Decorate(domainEventHandler, closedIdempotentHandler);
         }
+
         return services;
     }
 
@@ -130,7 +127,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        Auth0Options auth0Options = configuration.GetSection("Auth0").Get<Auth0Options>()!;
+        var auth0Options = configuration.GetSection("Auth0").Get<Auth0Options>()!;
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -138,14 +135,13 @@ public static class DependencyInjection
                 options.Authority = $"https://{auth0Options.Domain}";
                 options.Audience = auth0Options.Audience;
 
-                options.TokenValidationParameters = new TokenValidationParameters()
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateAudience = true,
-                    ValidateIssuer = true,
+                    ValidateIssuer = true
                 };
             });
         services.AddHttpContextAccessor();
         return services;
     }
-
 }
