@@ -12,7 +12,9 @@ public record SubscriptionPlanDto(
     Guid Id,
     string Name,
     decimal Price,
-    string Description
+    string Description,
+    SubscriptionStatus Status,
+    DateTime? CurrentPeriodEnd
 );
 
 public class GetSubscriptionPlanByUserEmail
@@ -37,7 +39,7 @@ public class GetSubscriptionPlanByUserEmail
                     us.UserId == user.Id && us.Status != SubscriptionStatus.Pending && nowUtc < us.CurrentPeriodEnd)
                 .OrderBy(us => us.CurrentPeriodEnd) // optional: pick the earliest ending subscription
                 .FirstOrDefaultAsync(cancellationToken);
-
+            
             if (subscriptionPlanOfUser is not null)
             {
                 var plan = subscriptionPlanOfUser.SubscriptionPlan;
@@ -46,10 +48,16 @@ public class GetSubscriptionPlanByUserEmail
                     plan.Id,
                     plan.Name,
                     plan.Price,
-                    plan.Description
+                    plan.Description,
+                    subscriptionPlanOfUser.Status,
+                    subscriptionPlanOfUser.CurrentPeriodEnd
                 );
 
                 return new Response(planDto);
+            }
+            else
+            {
+                
             }
 
             return Result.Failure<Response>(UserErrors.NoActiveSubscription);
