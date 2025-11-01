@@ -94,6 +94,7 @@ public abstract class CreateArticle
             RuleFor(x => x.Id).NotEmpty();
             RuleFor(x => x.Url).NotEmpty();
             RuleFor(x => x.RawHtml).NotEmpty();
+            RuleFor(x => x.CreateAt).NotEmpty();
         }
     }
 }

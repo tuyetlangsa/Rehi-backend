@@ -27,7 +27,12 @@ public abstract class UpdateArticleLocation
 
             if (articleExisted is null) return Result.Failure(ArticleErrors.NotFound);
             var updateAt = DateTimeOffset.FromUnixTimeMilliseconds(command.UpdateAt);
-
+            
+            if (updateAt < articleExisted.UpdateAt)
+            {
+                return Result.Failure(CommonErrors.StaleRequest);
+            }
+            
             articleExisted.Location = command.Location switch
             {
                 "reading" => Location.Reading,

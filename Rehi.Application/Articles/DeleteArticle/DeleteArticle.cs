@@ -29,6 +29,10 @@ public abstract class DeleteArticle
 
             articleExisted.IsDeleted = true;
             var updateAt = DateTimeOffset.FromUnixTimeMilliseconds(command.UpdateAt);
+            if (updateAt < articleExisted.UpdateAt)
+            {
+                return Result.Failure(CommonErrors.StaleRequest);
+            }
 
             articleExisted.UpdateAt = updateAt;
 
