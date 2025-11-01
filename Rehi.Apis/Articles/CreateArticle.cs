@@ -12,6 +12,7 @@ public class CreateArticleEndpoint : IEndpoint
     {
         app.MapPost("/articles/get-or-add", async ([FromBody] Request request, ISender sender) =>
             {
+
                 var result = await sender.Send(new CreateArticle.Command(request.Id, request.Url,  request.RawHtml, request.Title, request.CreateAt));
                 if ( result.IsSuccess)
                 {
