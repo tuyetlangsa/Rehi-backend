@@ -17,7 +17,7 @@ public class CreateArticleEndpoint : IEndpoint
                 if ( result.IsSuccess)
                 {
                     if (result.Value.IsSavedBefore)
-                    return result.MatchOk();
+                        return result.MatchOk();
                 }
                 return result.MatchCreated(id => $"/articles/{id}");
             })

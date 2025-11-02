@@ -11,15 +11,15 @@ namespace Rehi.Application.Articles.CreateArticle;
 
 public abstract class CreateArticle
 {
-    public record Command(Guid Id, string Url, string RawHtml,string Title, long CreateAt): ICommand<Response>;
-    
+    public record Command(Guid Id, string Url, string RawHtml, string Title, long CreateAt) : ICommand<Response>;
+
     public record Response(
         Guid Id,
         string Url,
         bool IsSavedBefore,
         List<HighlightResponse> Highlights
     );
-    
+
     public record HighlightResponse(
         Guid Id,
         Guid ArticleId,
@@ -32,18 +32,16 @@ public abstract class CreateArticle
         string? Color,
         bool IsDeleted,
         string CreateBy);
+
     internal class Handler(IDbContext dbContext, IUserContext userContext) : ICommandHandler<Command, Response>
     {
         public async Task<Result<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEmail = userContext.Email;
-            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userEmail , cancellationToken);
+            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userEmail, cancellationToken);
 
-            if (user is null)
-            {
-                return Result.Failure<Response>(UserErrors.NotFound);
-            }
-            
+            if (user is null) return Result.Failure<Response>(UserErrors.NotFound);
+
             var articleExisted = await dbContext.Articles.Include(a => a.Highlights)
                 .SingleOrDefaultAsync(a => a.Url == command.Url, cancellationToken);
 
@@ -65,34 +63,34 @@ public abstract class CreateArticle
                         h.CreateBy);
                 }).ToList();
                 return new Response(
-                    articleExisted.Id, 
-                    articleExisted.Url, 
-                    true, 
+                    articleExisted.Id,
+                    articleExisted.Url,
+                    true,
                     highlightResponses);
             }
-            
+
             var createAt = DateTimeOffset.FromUnixTimeMilliseconds(command.CreateAt);
-            var article = new Article()
+            var article = new Article
             {
                 Id = command.Id,
                 Url = command.Url,
                 RawHtml = command.RawHtml,
-                UserId = user!.Id, 
+                UserId = user!.Id,
                 CreateAt = createAt,
-                Title = command.Title,
+                Title = command.Title
             };
-            
+
             article.Raise(new ArticleCreatedDomainEvent(article.Id));
             dbContext.Articles.Add(article);
             await dbContext.SaveChangesAsync(cancellationToken);
             return new Response(article.Id, article.Url, false, []);
         }
     }
-    
+
     internal sealed class Validator : AbstractValidator<Command>
     {
         public Validator()
-        { 
+        {
             RuleFor(x => x.Id).NotEmpty();
             RuleFor(x => x.Url).NotEmpty();
             RuleFor(x => x.RawHtml).NotEmpty();

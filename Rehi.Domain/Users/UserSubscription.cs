@@ -10,13 +10,13 @@ public class UserSubscription : Entity
     public Guid SubscriptionPlanId { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
-    
-    public DateTime? CancelledAt { get; set; } 
-    public DateTime CurrentPeriodEnd { get; set; } 
-    public bool AutoRenew { get; set; } = true; 
-    
+
+    public DateTime? CancelledAt { get; set; }
+    public DateTime CurrentPeriodEnd { get; set; }
+    public bool AutoRenew { get; set; } = true;
+
     public bool IsActive => DateTime.UtcNow <= CurrentPeriodEnd;
-    
+
     public User User { get; set; } = null!;
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
     public string PaymentProvider { get; set; } = null!;

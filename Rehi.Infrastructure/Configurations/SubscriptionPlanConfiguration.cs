@@ -13,16 +13,16 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         builder.Property(sp => sp.Name)
             .IsRequired()
             .HasMaxLength(128);
-        
+
         builder.Property(sp => sp.Price)
             .HasColumnType("decimal(18,2)")
-            .IsRequired();  
-        
+            .IsRequired();
+
         builder.Property(sp => sp.Description)
             .IsRequired()
             .HasMaxLength(500)
             .HasColumnType("text");
-        
+
         builder.Property(sp => sp.PaypalPlanId)
             .HasMaxLength(100)
             .HasColumnType("text");
@@ -35,16 +35,16 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
 
         builder.HasData(new List<SubscriptionPlan>
         {
-            new SubscriptionPlan
+            new()
             {
                 Id = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
                 Name = "Freemium (Monthly)",
                 Price = 0,
                 Description =
                     "Perfect for new users. Includes: Basic note taking, Save up to 10 articles per day, Manual flashcard creation, Unlimited access, Cross device access.",
-                DurationDays = 30,
+                DurationDays = 30
             },
-            new SubscriptionPlan
+            new()
             {
                 Id = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa5"),
                 Name = "Premium Individual (Monthly)",
@@ -54,7 +54,7 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
                 DurationDays = 30,
                 PaypalPlanId = "P-4XP87117T0561114KND6LNKQ"
             },
-            new SubscriptionPlan
+            new()
             {
                 Id = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa4"),
                 Name = "Group Plan (Monthly)",
@@ -64,7 +64,7 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
                 DurationDays = 30,
                 PaypalPlanId = "P-06H31651K2C745930END6LNYA"
             },
-            new SubscriptionPlan
+            new()
             {
                 Id = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa3"),
                 Name = "Premium Individual (Yearly)",
@@ -74,7 +74,7 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
                 DurationDays = 365,
                 PaypalPlanId = "P-5XF55308K77570807ND6LOKI"
             },
-            new SubscriptionPlan
+            new()
             {
                 Id = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa2"),
                 Name = "Business Plan (Yearly)",

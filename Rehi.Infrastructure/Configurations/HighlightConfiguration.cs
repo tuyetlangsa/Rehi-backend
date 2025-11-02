@@ -40,6 +40,5 @@ public class HighlightConfiguration : IEntityTypeConfiguration<Highlight>
             .IsRequired(false);
         builder.Property(e => e.CreateBy).IsRequired().HasMaxLength(255);
         builder.Property(e => e.Note).HasColumnType("text").IsRequired(false);
-
     }
 }

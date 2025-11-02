@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
-using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
 using Rehi.Domain.Users;
 

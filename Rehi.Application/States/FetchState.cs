@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
-using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
 using Rehi.Domain.Users;
 
@@ -13,7 +12,7 @@ public abstract class FetchState
     public record Query(long LastUpdateTime) : IQuery<Response>;
 
     public record Response(Created Created, Updated Updated);
-    
+
     public record Created(List<ArticleResponse> Articles, List<TagResponse> Tags, List<HighlightResponse> Highlights);
 
     public record Updated(List<ArticleResponse> Articles, List<TagResponse> Tags, List<HighlightResponse> Highlights);
@@ -63,16 +62,13 @@ public abstract class FetchState
         public async Task<Result<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
             var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userContext.Email);
-            if (user is null)
-            {
-                return Result.Failure<Response>(UserErrors.NotFound);
-            }
+            if (user is null) return Result.Failure<Response>(UserErrors.NotFound);
 
             var lastUpdateTime = DateTimeOffset.FromUnixTimeMilliseconds(request.LastUpdateTime);
 
             var tags = await dbContext.Tags.AsNoTracking()
                 .Where(t => (t.CreateAt > lastUpdateTime
-                            || t.UpdateAt > lastUpdateTime) && t.UserId == user.Id)
+                             || t.UpdateAt > lastUpdateTime) && t.UserId == user.Id)
                 .ToListAsync(cancellationToken);
 
             var createdTags = tags
@@ -160,7 +156,7 @@ public abstract class FetchState
 
             var highlights = await dbContext.Highlights.IgnoreQueryFilters()
                 .Where(h => (h.CreateAt > lastUpdateTime
-                            || h.UpdateAt > lastUpdateTime) && h.UserId == user.Id)
+                             || h.UpdateAt > lastUpdateTime) && h.UserId == user.Id)
                 .ToListAsync(cancellationToken);
 
             var createdHighlights = highlights
@@ -170,21 +166,21 @@ public abstract class FetchState
                     var createAt = h.CreateAt.ToUnixTimeMilliseconds();
                     var updateAt = h.UpdateAt?.ToUnixTimeMilliseconds();
                     return new HighlightResponse(
-                        h.Id, 
-                        h.ArticleId, 
-                        h.Location, 
-                        h.Html, 
-                        h.Markdown, 
-                        h.PlainText, 
-                        createAt, 
-                        updateAt, 
+                        h.Id,
+                        h.ArticleId,
+                        h.Location,
+                        h.Html,
+                        h.Markdown,
+                        h.PlainText,
+                        createAt,
+                        updateAt,
                         h.Color,
                         h.IsDeleted,
                         h.CreateBy,
                         h.Note);
                 })
                 .ToList();
-            
+
             var updatedHighlights = highlights
                 .Where(h => h.CreateAt <= lastUpdateTime
                             && h.UpdateAt != null
@@ -194,21 +190,21 @@ public abstract class FetchState
                     var createAt = h.CreateAt.ToUnixTimeMilliseconds();
                     var updateAt = h.UpdateAt?.ToUnixTimeMilliseconds();
                     return new HighlightResponse(
-                        h.Id, 
-                        h.ArticleId, 
-                        h.Location, 
-                        h.Html, 
-                        h.Markdown, 
-                        h.PlainText, 
-                        createAt, 
-                        updateAt, 
+                        h.Id,
+                        h.ArticleId,
+                        h.Location,
+                        h.Html,
+                        h.Markdown,
+                        h.PlainText,
+                        createAt,
+                        updateAt,
                         h.Color,
                         h.IsDeleted,
                         h.CreateBy,
                         h.Note);
                 })
                 .ToList();
-            
+
             var created = new Created(createdArticles, createdTags, createdHighlights);
             var updated = new Updated(updatedArticles, updatedTags, updatedHighlights);
             return new Response(created, updated);

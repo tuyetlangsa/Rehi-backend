@@ -17,5 +17,4 @@ public class GetAllState : IEndpoint
             .RequireAuthorization()
             .WithName("GetAllStates");
     }
-
 }

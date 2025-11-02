@@ -15,16 +15,16 @@ public class UserSubcriptionConfiguration : IEntityTypeConfiguration<UserSubscri
 
         builder.Property(us => us.StartDate).IsRequired();
         builder.Property(us => us.EndDate).IsRequired();
-        
+
         builder.HasOne(us => us.User)
             .WithMany(u => u.UserSubscriptions)
             .HasForeignKey(us => us.UserId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+
         builder.HasOne(us => us.SubscriptionPlan)
-            .WithMany(s => s.UserSubscriptions) 
+            .WithMany(s => s.UserSubscriptions)
             .HasForeignKey(us => us.SubscriptionPlanId)
-            .OnDelete(DeleteBehavior.Restrict); 
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Ignore(us => us.IsActive);
     }

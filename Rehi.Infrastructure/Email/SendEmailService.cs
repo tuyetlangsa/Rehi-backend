@@ -1,7 +1,9 @@
 ﻿using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using MimeKit.Text;
 using Quartz;
 using Rehi.Application.Abstraction.Email;
 using Rehi.Infrastructure.EmailService;
@@ -11,7 +13,9 @@ public class SendEmailService : ISendEmailService
     private readonly IConfiguration _configuration;
     private readonly ILogger<SendEmailService> _logger;
     private readonly ISchedulerFactory _schedulerFactory;
-    public SendEmailService(IConfiguration configuration, ILogger<SendEmailService> logger, ISchedulerFactory schedulerFactory)
+
+    public SendEmailService(IConfiguration configuration, ILogger<SendEmailService> logger,
+        ISchedulerFactory schedulerFactory)
     {
         _configuration = configuration;
         _logger = logger;
@@ -20,12 +24,13 @@ public class SendEmailService : ISendEmailService
 
     public async Task SendEmailAsync(string to, string body)
     {
-        string smtpUser = _configuration["SendEmail:SmtpUser"];
-        string smtpPass = _configuration["SendEmail:SmtpPass"];
+        var smtpUser = _configuration["SendEmail:SmtpUser"];
+        var smtpPass = _configuration["SendEmail:SmtpPass"];
 
         if (string.IsNullOrEmpty(smtpUser) || string.IsNullOrEmpty(smtpPass))
         {
-            _logger.LogError("SMTP credentials are missing in configuration (SendEmail:SmtpUser or SendEmail:SmtpPass).");
+            _logger.LogError(
+                "SMTP credentials are missing in configuration (SendEmail:SmtpUser or SendEmail:SmtpPass).");
             throw new InvalidOperationException("SMTP credentials not found in configuration.");
         }
 
@@ -33,18 +38,19 @@ public class SendEmailService : ISendEmailService
         email.From.Add(MailboxAddress.Parse(smtpUser));
         email.To.Add(MailboxAddress.Parse(to));
         email.Subject = "Long oi Long dit me may";
-        email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = body };
+        email.Body = new TextPart(TextFormat.Html) { Text = body };
 
         try
         {
             using var smtp = new SmtpClient();
 
-            await smtp.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
+            await smtp.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
 
             await smtp.AuthenticateAsync(smtpUser, smtpPass);
 
             await smtp.SendAsync(email);
-            _logger.LogInformation("Email sent successfully to {Recipient} with subject '{Subject}'.", to, "Long oi Long dit me may");
+            _logger.LogInformation("Email sent successfully to {Recipient} with subject '{Subject}'.", to,
+                "Long oi Long dit me may");
         }
         catch (Exception ex)
         {
@@ -73,13 +79,13 @@ public class SendEmailService : ISendEmailService
         var jobKey = new JobKey(EmailReminderJob.Name);
 
         var trigger = TriggerBuilder.Create()
-            .ForJob(jobKey)  
+            .ForJob(jobKey)
             .WithIdentity($"trigger-{Guid.NewGuid()}")
             .UsingJobData("userEmail", userEmail)
             .UsingJobData("message", "Long oi Long dit me may")
             .StartAt(scheduledTime)
             .Build();
 
-        await scheduler.ScheduleJob(trigger);  
+        await scheduler.ScheduleJob(trigger);
     }
 }

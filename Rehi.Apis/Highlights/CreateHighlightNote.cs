@@ -9,13 +9,13 @@ public class CreateHighlightNote : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/highlights/note", 
+        app.MapPost("/highlights/note",
                 async ([FromBody] Request request, ISender sender) =>
                 {
                     var result =
                         await sender.Send(new Application.Highlights.CreateHighlightNote.CreateHighlightNote.Command(
-                            request.HighlightId, 
-                            request.Note, 
+                            request.HighlightId,
+                            request.Note,
                             request.SavedAt));
                     return result.MatchOk();
                 })

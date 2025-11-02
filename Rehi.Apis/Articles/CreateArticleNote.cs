@@ -9,13 +9,13 @@ public class CreateArticleNote : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/articles/note", 
+        app.MapPost("/articles/note",
                 async ([FromBody] Request request, ISender sender) =>
                 {
                     var result =
                         await sender.Send(new Application.Articles.CreateArticleNote.CreateArticleNote.Command(
-                            request.ArticleId, 
-                            request.Note, 
+                            request.ArticleId,
+                            request.Note,
                             request.SavedAt));
                     return result.MatchOk();
                 })

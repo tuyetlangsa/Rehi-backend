@@ -3,22 +3,22 @@ using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Messaging;
 using Rehi.Application.Abstraction.Payments;
-using Rehi.Application.States;
 using Rehi.Domain.Common;
 using Rehi.Domain.Subscription;
 using Rehi.Domain.Subscriptions;
 using Rehi.Domain.Users;
 
 namespace Rehi.Application.Subscriptions.CreateSubscription;
+
 public abstract class CreateSubscription
 {
-    public record Command(Guid SubscriptionPlanId, string PayPalPlanId, string Provider) : ICommand<Response>;
+    public record Command(Guid SubscriptionId, string Provider) : ICommand<Response>;
 
     public record Response(string ApprovalUrl, string SubscriptionId, string Provider);
 
     internal class Handler(
-        IDbContext dbContext, 
-        IUserContext userContext, 
+        IDbContext dbContext,
+        IUserContext userContext,
         IPaymentFactory paymentFactory
     ) : ICommandHandler<Command, Response>
     {
@@ -26,27 +26,27 @@ public abstract class CreateSubscription
         {
             var user = await dbContext.Users
                 .SingleOrDefaultAsync(u => u.Email == userContext.Email, cancellationToken);
-            
+
             if (user is null)
                 return Result.Failure<Response>(UserErrors.NotFound);
-            
+
             var plan = await dbContext.SubscriptionPlans
-                .SingleOrDefaultAsync(sp => sp.Id == request.SubscriptionPlanId, cancellationToken);
-            
+                .SingleOrDefaultAsync(sp => sp.Id == request.SubscriptionId, cancellationToken);
+
             if (plan is null)
                 return Result.Failure<Response>(SubscriptionErrors.NotFound);
 
             var hasActiveSubscription = await dbContext.UserSubscriptions
-                .AnyAsync(s => 
-                    s.UserId == user.Id && 
-                    (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Pending),
+                .AnyAsync(s =>
+                        s.UserId == user.Id &&
+                        (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Pending),
                     cancellationToken);
 
             if (hasActiveSubscription)
                 return Result.Failure<Response>(SubscriptionErrors.AlreadyExists);
 
             var paymentService = paymentFactory.Create(request.Provider);
-            var paypalResult = await paymentService.CreateSubscriptionAsync(request.PayPalPlanId);
+            var paypalResult = await paymentService.CreateSubscriptionAsync(plan.PaypalPlanId!);
 
             if (!paypalResult.Success)
                 return Result.Failure<Response>(SubscriptionErrors.FailedToCreate);
@@ -54,7 +54,7 @@ public abstract class CreateSubscription
             var subscription = new UserSubscription
             {
                 UserId = user.Id,
-                SubscriptionPlanId = request.SubscriptionPlanId,
+                SubscriptionPlanId = request.SubscriptionId,
                 PaymentProvider = request.Provider,
                 PayPalSubscriptionId = paypalResult.SubscriptionId,
                 Status = SubscriptionStatus.Pending,
@@ -68,8 +68,8 @@ public abstract class CreateSubscription
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response(
-                paypalResult.ApprovalUrl, 
-                paypalResult.SubscriptionId, 
+                paypalResult.ApprovalUrl,
+                paypalResult.SubscriptionId,
                 request.Provider
             );
         }

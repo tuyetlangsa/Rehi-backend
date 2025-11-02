@@ -1,13 +1,11 @@
-﻿using System.Data;
-using System.Data.Common;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Quartz;
+using Rehi.Application;
 using Rehi.Application.Abstraction.Clock;
-using Rehi.Application.Abstraction.Messaging;
 using Rehi.Domain.Common;
 using Rehi.Infrastructure.Database;
 using Rehi.Infrastructure.Serialization;
@@ -31,29 +29,27 @@ internal sealed class ProcessOutboxJob(
         // await using DbConnection connection = await dbConnectionFactory.OpenConnectionAsync();
         // await using DbTransaction transaction = await connection.BeginTransactionAsync();
 
-        IReadOnlyList<OutboxMessageResponse> outboxMessages = await GetOutboxMessagesAsync();
+        var outboxMessages = await GetOutboxMessagesAsync();
 
-        foreach (OutboxMessageResponse outboxMessage in outboxMessages)
+        foreach (var outboxMessage in outboxMessages)
         {
             Exception? exception = null;
 
             try
             {
-                IDomainEvent domainEvent = JsonConvert.DeserializeObject<IDomainEvent>(
+                var domainEvent = JsonConvert.DeserializeObject<IDomainEvent>(
                     outboxMessage.Content,
                     SerializerSettings.Instance)!;
 
-                using IServiceScope scope = serviceScopeFactory.CreateScope();
+                using var scope = serviceScopeFactory.CreateScope();
 
-                IEnumerable<IDomainEventHandler> handlers = DomainEventHandlersFactory.GetHandlers(
+                var handlers = DomainEventHandlersFactory.GetHandlers(
                     domainEvent.GetType(),
                     scope.ServiceProvider,
-                    Application.AssemblyReference.Assembly);
+                    AssemblyReference.Assembly);
 
-                foreach (IDomainEventHandler domainEventHandler in handlers)
-                {
+                foreach (var domainEventHandler in handlers)
                     await domainEventHandler.Handle(domainEvent, context.CancellationToken);
-                }
             }
             catch (Exception caughtException)
             {
@@ -127,14 +123,14 @@ internal sealed class ProcessOutboxJob(
         //         Error = exception?.ToString()
         //     },
         //     transaction: transaction);
-        
-        
+
+
         var message = await dbContext.OutboxMessages
             .FirstOrDefaultAsync(m => m.Id == outboxMessage.Id);
 
         if (message != null)
         {
-            message.ProcessedOnUtc = dateTimeProvider.UtcNow; 
+            message.ProcessedOnUtc = dateTimeProvider.UtcNow;
             message.Error = exception?.ToString();
 
             await dbContext.SaveChangesAsync();
@@ -143,7 +139,7 @@ internal sealed class ProcessOutboxJob(
 
     internal sealed record OutboxMessageResponse
     {
-        public Guid Id { get; init; } 
+        public Guid Id { get; init; }
         public string Content { get; init; } = null!;
-    };
+    }
 }
