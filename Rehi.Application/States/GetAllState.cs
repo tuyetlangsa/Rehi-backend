@@ -36,7 +36,10 @@ public class GetAllState
     public record TagResponse(
         Guid Id,
         string Name,
-        bool IsDeleted);
+        bool IsDeleted,
+        long CreateAt,
+        long? UpdateAt);
+
     
     public record HighlightResponse(
         Guid Id,
@@ -62,9 +65,16 @@ public class GetAllState
                  return Result.Failure<Response>(UserErrors.NotFound);
              }
 
-             var tagResponses = await dbContext.Tags
-                 .AsNoTracking().Select(t => new TagResponse(t.Id, t.Name, t.IsDeleted))
+             var tags = await dbContext.Tags
+                 .AsNoTracking()
                  .ToListAsync(cancellationToken);
+             var tagResponses = tags.Select(t =>
+             {
+                 var createAt = t.CreateAt.ToUnixTimeMilliseconds();
+                 var updateAt = t.UpdateAt?.ToUnixTimeMilliseconds();
+
+                 return new TagResponse(t.Id, t.Name, t.IsDeleted, createAt, updateAt);
+             }).ToList();
              var articles = await dbContext.Articles.IgnoreQueryFilters().Where(a => a.UserId == user.Id)
                  .AsNoTracking().ToListAsync(cancellationToken);
              var highlights = await dbContext.Highlights.IgnoreQueryFilters().Where(h => h.UserId == user.Id)

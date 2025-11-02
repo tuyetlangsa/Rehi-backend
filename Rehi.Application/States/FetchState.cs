@@ -40,7 +40,9 @@ public abstract class FetchState
     public record TagResponse(
         Guid Id,
         string Name,
-        bool IsDeleted);
+        bool IsDeleted,
+        long CreateAt,
+        long? UpdateAt);
 
     public record HighlightResponse(
         Guid Id,
@@ -75,14 +77,26 @@ public abstract class FetchState
 
             var createdTags = tags
                 .Where(t => t.CreateAt > lastUpdateTime)
-                .Select(t => new TagResponse(t.Id, t.Name, t.IsDeleted))
+                .Select(t =>
+                {
+                    var createAt = t.CreateAt.ToUnixTimeMilliseconds();
+                    var updateAt = t.UpdateAt?.ToUnixTimeMilliseconds();
+
+                    return new TagResponse(t.Id, t.Name, t.IsDeleted, createAt, updateAt);
+                })
                 .ToList();
 
             var updatedTags = tags
                 .Where(t => t.CreateAt <= lastUpdateTime
                             && t.UpdateAt != null
                             && t.UpdateAt > lastUpdateTime)
-                .Select(t => new TagResponse(t.Id, t.Name, t.IsDeleted))
+                .Select(t =>
+                {
+                    var createAt = t.CreateAt.ToUnixTimeMilliseconds();
+                    var updateAt = t.UpdateAt?.ToUnixTimeMilliseconds();
+
+                    return new TagResponse(t.Id, t.Name, t.IsDeleted, createAt, updateAt);
+                })                
                 .ToList();
 
 
