@@ -31,7 +31,7 @@ public class CancelSubscription
                 .Where(us =>
                     us.User.Email == userContext.Email &&
                     (us.Status == SubscriptionStatus.Active || us.Status == SubscriptionStatus.Pending))
-                .SingleOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (subscription is null)
                 return Result.Failure<Response>(SubscriptionErrors.NotFound);
