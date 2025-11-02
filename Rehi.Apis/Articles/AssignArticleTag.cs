@@ -9,7 +9,7 @@ public class AssignArticleTag : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/articles/assign-tag", async ([FromBody] Request request, ISender sender) =>
+        app.MapPost("/articles/assign-tag", async ([FromBody] Request request,  ISender sender) =>
             {
                 var result = await sender.Send(
                     new Application.Articles.AssignArticleTag.AssignArticleTag.Command(

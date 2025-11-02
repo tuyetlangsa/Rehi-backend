@@ -31,5 +31,6 @@ public class ArticleConfiguration : IEntityTypeConfiguration<Article>
         builder.Property(e => e.UpdateAt).HasColumnType("timestamptz").IsRequired(false);
         builder.Property(e => e.Location).HasConversion<byte>().IsRequired().HasDefaultValue(Location.Reading);
         builder.Property(e => e.Note).HasColumnType("text").IsRequired(false);
+        builder.HasIndex(e => new {e.Title, e.Author, e.TextContent}).HasMethod("GIN").IsTsVectorExpressionIndex("english");
     }
 }

@@ -47,6 +47,7 @@ public static class DependencyInjection
                 .UseNpgsql(
                     configuration.GetConnectionString("Database"),
                     npgsqlOptions => npgsqlOptions
+                        .EnableRetryOnFailure()
                         .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Default))
                 .AddInterceptors(sp.GetRequiredService<InsertOutboxMessagesInterceptor>()));
 

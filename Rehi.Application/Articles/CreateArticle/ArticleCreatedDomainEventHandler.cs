@@ -59,6 +59,7 @@ public class ArticleCreatedDomainEventHandler(IDbContext dbContext) : DomainEven
         articleEntity.Language = article.Language;
         articleEntity.PublishDate = article.PublicationDate?.ToUniversalTime();
         articleEntity.UpdateAt = DateTimeOffset.UtcNow;
+        articleEntity.Raise(new ArticleParsedDomainEvent(domainEvent.ArticleId));
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

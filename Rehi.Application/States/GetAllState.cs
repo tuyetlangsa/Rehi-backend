@@ -9,13 +9,11 @@ namespace Rehi.Application.States;
 
 public class GetAllState
 {
-    public record Query : IQuery<Response>;
-
+    public record Query() : IQuery<Response>;
     public record Response(
-        List<TagResponse> Tags,
+        List<TagResponse> Tags, 
         List<ArticleResponse> Articles,
         List<HighlightResponse> Highlights);
-
     public record ArticleResponse(
         Guid Id,
         string Url,
@@ -34,12 +32,14 @@ public class GetAllState
         bool IsDeleted,
         string Location,
         string? Note);
-
     public record TagResponse(
         Guid Id,
         string Name,
-        bool IsDeleted);
+        bool IsDeleted,
+        long CreateAt,
+        long? UpdateAt);
 
+    
     public record HighlightResponse(
         Guid Id,
         Guid ArticleId,
@@ -53,66 +53,76 @@ public class GetAllState
         bool IsDeleted,
         string CreateBy,
         string? Note);
+    
+     internal sealed class Handler(IDbContext dbContext, IUserContext userContext) : IQueryHandler<Query, Response>
+     {
+         public async Task<Result<Response>> Handle(Query request, CancellationToken cancellationToken)
+         {
+             var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userContext.Email);
+             if (user is null)
+             {
+                 return Result.Failure<Response>(UserErrors.NotFound);
+             }
 
-    internal sealed class Handler(IDbContext dbContext, IUserContext userContext) : IQueryHandler<Query, Response>
-    {
-        public async Task<Result<Response>> Handle(Query request, CancellationToken cancellationToken)
-        {
-            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == userContext.Email);
-            if (user is null) return Result.Failure<Response>(UserErrors.NotFound);
+             var tags = await dbContext.Tags
+                 .AsNoTracking()
+                 .ToListAsync(cancellationToken);
+             var tagResponses = tags.Select(t =>
+             {
+                 var createAt = t.CreateAt.ToUnixTimeMilliseconds();
+                 var updateAt = t.UpdateAt?.ToUnixTimeMilliseconds();
 
-            var tagResponses = await dbContext.Tags
-                .AsNoTracking().Select(t => new TagResponse(t.Id, t.Name, t.IsDeleted))
-                .ToListAsync(cancellationToken);
-            var articles = await dbContext.Articles.IgnoreQueryFilters().Where(a => a.UserId == user.Id)
-                .AsNoTracking().ToListAsync(cancellationToken);
-            var highlights = await dbContext.Highlights.IgnoreQueryFilters().Where(h => h.UserId == user.Id)
-                .AsNoTracking().ToListAsync(cancellationToken);
-            var articleResponses = articles.Select(a =>
-            {
-                var createAt = a.CreateAt.ToUnixTimeMilliseconds();
-                var updateAt = a.UpdateAt?.ToUnixTimeMilliseconds();
-                return new ArticleResponse(
-                    a.Id,
-                    a.Url,
-                    a.Title,
-                    a.Author,
-                    a.Summary,
-                    a.ImageUrl,
-                    a.TextContent,
-                    createAt,
-                    updateAt,
-                    a.Language,
-                    a.WordCount,
-                    a.Tags.Select(t => t.Id).ToList(),
-                    a.TimeToRead,
-                    a.Content,
-                    a.IsDeleted,
-                    a.Location.ToString(),
-                    a.Note
-                );
-            }).ToList();
+                 return new TagResponse(t.Id, t.Name, t.IsDeleted, createAt, updateAt);
+             }).ToList();
+             var articles = await dbContext.Articles.IgnoreQueryFilters().Where(a => a.UserId == user.Id)
+                 .AsNoTracking().ToListAsync(cancellationToken);
+             var highlights = await dbContext.Highlights.IgnoreQueryFilters().Where(h => h.UserId == user.Id)
+                 .AsNoTracking().ToListAsync(cancellationToken);
+             var articleResponses = articles.Select(a =>
+             {
+                 var createAt = a.CreateAt.ToUnixTimeMilliseconds();
+                 var updateAt = a.UpdateAt?.ToUnixTimeMilliseconds();
+                 return new ArticleResponse(
+                     a.Id,
+                     a.Url,
+                     a.Title,
+                     a.Author,
+                     a.Summary,
+                     a.ImageUrl,
+                     a.TextContent,
+                     createAt,
+                     updateAt,
+                     a.Language,
+                     a.WordCount,
+                     a.Tags.Select(t => t.Id).ToList(),
+                     a.TimeToRead,
+                     a.Content,
+                     a.IsDeleted,
+                     a.Location.ToString(),
+                     a.Note
+                 );
+             }).ToList();
+             
+             var highlightResponse = highlights.Select(h => 
+             {
+                 var createAt = h.CreateAt.ToUnixTimeMilliseconds();
+                 var updateAt = h.UpdateAt?.ToUnixTimeMilliseconds();
 
-            var highlightResponse = highlights.Select(h =>
-            {
-                var createAt = h.CreateAt.ToUnixTimeMilliseconds();
-                var updateAt = h.UpdateAt?.ToUnixTimeMilliseconds();
-
-                return new HighlightResponse(
-                    h.Id,
-                    h.ArticleId,
-                    h.Location,
-                    h.Html,
-                    h.Markdown,
-                    h.PlainText,
-                    createAt,
-                    updateAt,
-                    h.Color,
-                    h.IsDeleted,
-                    h.CreateBy,
-                    h.Note);
-            }).ToList();
-            return new Response(tagResponses, articleResponses, highlightResponse);
-        }
-    }
+                 return new HighlightResponse(
+                     h.Id,
+                     h.ArticleId,
+                     h.Location,
+                     h.Html,
+                     h.Markdown,
+                     h.PlainText,
+                     createAt,
+                     updateAt,
+                     h.Color,
+                     h.IsDeleted,
+                     h.CreateBy,
+                     h.Note);
+             }).ToList();
+             return new Response(tagResponses, articleResponses, highlightResponse);
+         }
+     }
 }

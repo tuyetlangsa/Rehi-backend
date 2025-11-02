@@ -17,7 +17,7 @@ public class Program
         builder.Services.AddSwaggerGenWithAuth();
 
         builder.Services
-            .AddApplication() // add application handler
+            .AddApplication(builder.Configuration) // add application handler
             .AddPresentation()
             .AddInfrastructure(builder.Configuration);
         builder.Services.AddAuthorization();

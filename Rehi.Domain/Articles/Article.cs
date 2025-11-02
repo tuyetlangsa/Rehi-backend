@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using Pgvector;
 using Rehi.Domain.Common;
 using Rehi.Domain.Highlights;
 using Rehi.Domain.Tags;
