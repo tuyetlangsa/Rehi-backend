@@ -37,7 +37,7 @@ public abstract class SendEmail
 
             user.ScheduleTime = command.scheduleTime;
             await _dbContext.SaveChangesAsync(cancellationToken);
-            await _sendEmailService.ScheduleReminder(email, command.scheduleTime);
+            await _sendEmailService.ScheduleReminder(email, user.Id, command.scheduleTime);
             return Result.Success(new Response(user.Email, user.ScheduleTime));
         }
     }

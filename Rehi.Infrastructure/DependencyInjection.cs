@@ -54,13 +54,13 @@ public static class DependencyInjection
         services.ConfigureOptions<ConfigureProcessOutboxJob>();
         services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IUserContext, UserContext>();
-        services.AddScoped<ISendEmailService, SendEmailService>();
         services.AddScoped<IPaymentFactory, PaymentFactory>();
         services.AddScoped<IPaymentService, PayPalPaymentService>();
         services.AddScoped<IPayPalWebHookService, PayPalWebhookService>();
         //subscription
         services.AddPayPalHttpClient(configuration);
         //need to refactor later
+        services.AddScoped<ISendEmailService, SendEmailService>();
         services.AddQuartz(configurator =>
         {
             var scheduler = Guid.NewGuid();
