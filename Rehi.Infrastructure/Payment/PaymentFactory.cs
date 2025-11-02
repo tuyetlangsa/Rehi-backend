@@ -7,7 +7,7 @@ namespace Rehi.Infrastructure.Payment;
 public class PaymentFactory : IPaymentFactory
 {
     private readonly IServiceProvider _serviceProvider;
-    
+
     public PaymentFactory(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;

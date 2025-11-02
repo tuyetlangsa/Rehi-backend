@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Rehi.Apis.Endpoints;
@@ -10,8 +9,9 @@ public class UpdateArticleLocation : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/articles/{articleId}/{location}/{updateAt}", 
-                async ([FromRoute] Guid articleId, [FromRoute] string location, [FromRoute] long updateAt, ISender sender) =>
+        app.MapPost("/articles/{articleId}/{location}/{updateAt}",
+                async ([FromRoute] Guid articleId, [FromRoute] string location, [FromRoute] long updateAt,
+                    ISender sender) =>
                 {
                     var result =
                         await sender.Send(

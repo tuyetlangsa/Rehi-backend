@@ -18,5 +18,4 @@ public class FetchState : IEndpoint
             .RequireAuthorization()
             .WithName("FetchState");
     }
-
 }

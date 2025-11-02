@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Rehi.Application.Abstraction.Messaging;
 using Rehi.Domain.Common;
 using Rehi.Infrastructure.Database;
 
@@ -13,13 +12,9 @@ internal sealed class IdempotentDomainEventHandler<TDomainEvent>(
 {
     public override async Task Handle(TDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
-
         var outboxMessageConsumer = new OutboxMessageConsumer(domainEvent.Id, decorated.GetType().Name);
 
-        if (await OutboxConsumerExistsAsync(outboxMessageConsumer))
-        {
-            return;
-        }
+        if (await OutboxConsumerExistsAsync(outboxMessageConsumer)) return;
 
         await decorated.Handle(domainEvent, cancellationToken);
 
@@ -29,7 +24,6 @@ internal sealed class IdempotentDomainEventHandler<TDomainEvent>(
     private async Task<bool> OutboxConsumerExistsAsync(
         OutboxMessageConsumer outboxMessageConsumer)
     {
-        
         // const string sql = 
         //     """
         //     SELECT EXISTS(
@@ -41,7 +35,7 @@ internal sealed class IdempotentDomainEventHandler<TDomainEvent>(
         //     """;
         //
         // return await dbConnection.ExecuteScalarAsync<bool>(sql, outboxMessageConsumer);
-        
+
         return await dbContext.OutboxMessageConsumers
             .AnyAsync(c =>
                 c.OutboxMessageId == outboxMessageConsumer.OutboxMessageId &&

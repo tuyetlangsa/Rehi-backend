@@ -12,12 +12,11 @@ public static class ClaimPrincipleExtension
     //         parsedUserId :
     //         throw new ApplicationException("User id is unavailable");
     // }
-    
+
     public static string GetEmail(this ClaimsPrincipal? principal)
     {
-        string? email = principal?.FindFirstValue(ClaimTypes.Email);
+        var email = principal?.FindFirstValue(ClaimTypes.Email);
 
         return email ?? throw new ApplicationException("User email is unavailable");
     }
-    
 }

@@ -1,13 +1,7 @@
 namespace Rehi.Domain.Common;
 
-
 public class Page<T>
 {
-    public ICollection<T> Items { get; set; } = [];
-    public int? PageNumber { get; set; }
-    public int? TotalPages { get; set; }
-    public int TotalCount { get; set; }
-    
     protected Page()
     {
     }
@@ -19,7 +13,7 @@ public class Page<T>
         TotalCount = count;
         Items = items;
     }
-    
+
     public Page(ICollection<T> items, int count)
     {
         PageNumber = null;
@@ -28,8 +22,12 @@ public class Page<T>
         Items = items;
     }
 
+    public ICollection<T> Items { get; set; } = [];
+    public int? PageNumber { get; set; }
+    public int? TotalPages { get; set; }
+    public int TotalCount { get; set; }
+
     public bool HasPreviousPage => PageNumber > 1;
 
     public bool HasNextPage => PageNumber < TotalPages;
-    
 }

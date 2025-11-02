@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
-using Rehi.Application.Abstraction.Messaging;
 using Rehi.Domain.Common;
 
 namespace Rehi.Infrastructure.Outbox;
@@ -15,11 +14,11 @@ public static class DomainEventHandlersFactory
         IServiceProvider serviceProvider,
         Assembly assembly)
     {
-        Type[] domainEventHandlerTypes = HandlersDictionary.GetOrAdd(
+        var domainEventHandlerTypes = HandlersDictionary.GetOrAdd(
             $"{assembly.GetName().Name}{type.Name}",
             _ =>
             {
-                Type[] domainEventHandlerTypes = assembly.GetTypes()
+                var domainEventHandlerTypes = assembly.GetTypes()
                     .Where(t => t.IsAssignableTo(typeof(IDomainEventHandler<>).MakeGenericType(type)))
                     .ToArray();
 
@@ -27,9 +26,9 @@ public static class DomainEventHandlersFactory
             });
 
         List<IDomainEventHandler> handlers = [];
-        foreach (Type domainEventHandlerType in domainEventHandlerTypes)
+        foreach (var domainEventHandlerType in domainEventHandlerTypes)
         {
-            object domainEventHandler = serviceProvider.GetRequiredService(domainEventHandlerType);
+            var domainEventHandler = serviceProvider.GetRequiredService(domainEventHandlerType);
 
             handlers.Add((domainEventHandler as IDomainEventHandler)!);
         }

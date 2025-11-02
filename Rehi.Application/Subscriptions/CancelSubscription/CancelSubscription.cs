@@ -8,13 +8,13 @@ using Rehi.Domain.Common;
 using Rehi.Domain.Payment;
 using Rehi.Domain.Subscription;
 using Rehi.Domain.Subscriptions;
-using Rehi.Domain.Users;
 
 namespace Rehi.Application.Subscriptions.CancelSubscription;
 
 public class CancelSubscription
 {
     public record Command(string Provider) : ICommand<Response>;
+
     public record Response(bool Success, string Message);
 
     internal class Handler(
@@ -28,7 +28,7 @@ public class CancelSubscription
         {
             var subscription = await dbContext.UserSubscriptions
                 .Include(us => us.User)
-                .Where(us => 
+                .Where(us =>
                     us.User.Email == userContext.Email &&
                     (us.Status == SubscriptionStatus.Active || us.Status == SubscriptionStatus.Pending))
                 .SingleOrDefaultAsync(cancellationToken);
@@ -63,7 +63,8 @@ public class CancelSubscription
                     "Cancellation request sent to PayPal for subscription {Id}. Waiting for webhook confirmation.",
                     subscription.Id);
 
-                return Result.Success(new Response(true,  $"Subscription cancelled. You still have access until {subscription.CurrentPeriodEnd:yyyy-MM-dd}"));
+                return Result.Success(new Response(true,
+                    $"Subscription cancelled. You still have access until {subscription.CurrentPeriodEnd:yyyy-MM-dd}"));
             }
             catch (Exception ex)
             {

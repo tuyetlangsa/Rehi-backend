@@ -19,6 +19,5 @@ public class TagConfiguration : IEntityTypeConfiguration<Tag>
         builder.Property(e => e.CreateAt).HasColumnType("timestamptz")
             .IsRequired();
         builder.Property(e => e.UpdateAt).HasColumnType("timestamptz").IsRequired(false);
-
     }
 }

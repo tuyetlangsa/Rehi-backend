@@ -2,6 +2,7 @@ using Rehi.Domain.Articles;
 using Rehi.Domain.Common;
 using Rehi.Domain.Highlights;
 using Rehi.Domain.Tags;
+
 namespace Rehi.Domain.Users;
 
 public class User : Entity
@@ -12,7 +13,7 @@ public class User : Entity
     public ICollection<Article> Articles { get; set; } = new List<Article>();
     public ICollection<Tag> Tags { get; set; } = new List<Tag>();
     public DateTime ScheduleTime { get; set; }
-    
+
     public virtual ICollection<Highlight> Highlights { get; set; } = new List<Highlight>();
-    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();  
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }

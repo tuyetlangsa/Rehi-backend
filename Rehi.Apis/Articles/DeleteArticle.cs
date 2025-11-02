@@ -9,11 +9,12 @@ public class DeleteArticle : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/articles/{articleId}/{updateAt}", 
+        app.MapDelete("/articles/{articleId}/{updateAt}",
                 async ([FromRoute] Guid articleId, [FromRoute] long updateAt, ISender sender) =>
                 {
                     var result =
-                        await sender.Send(new Application.Articles.DeleteArticle.DeleteArticle.Command(articleId, updateAt));
+                        await sender.Send(
+                            new Application.Articles.DeleteArticle.DeleteArticle.Command(articleId, updateAt));
                     return result.MatchOk();
                 })
             .WithTags("Articles")

@@ -8,4 +8,3 @@ public class PayPalSettings
     public string BaseUrl { get; set; } = "https://api.sandbox.paypal.com";
     public string WebhookId { get; set; } = string.Empty;
 }
-

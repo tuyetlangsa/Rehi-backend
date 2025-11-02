@@ -9,11 +9,12 @@ public class DeleteHighlight : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/highlights/{highlightId}/{updateAt}", 
+        app.MapDelete("/highlights/{highlightId}/{updateAt}",
                 async ([FromRoute] Guid highlightId, [FromRoute] long updateAt, ISender sender) =>
                 {
                     var result =
-                        await sender.Send(new Application.Highlights.DeleteHighlight.DeleteHighlight.Command(highlightId, updateAt));
+                        await sender.Send(
+                            new Application.Highlights.DeleteHighlight.DeleteHighlight.Command(highlightId, updateAt));
                     return result.MatchOk();
                 })
             .WithTags("Highlights")
