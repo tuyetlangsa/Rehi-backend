@@ -22,7 +22,7 @@ public class SendEmail : IEndpoint
 
     internal sealed class Request
     {
-        public string? UserEmail { get; set; }
+        public string UserEmail { get; set; } = null!;
         public DateTime ScheduleTime { get; set; }
     }
 }

@@ -18,7 +18,7 @@ public class EmailReminderJob(ILogger<EmailReminderJob> logger, ISendEmailServic
 
         try
         {
-            await emailService.SendEmailAsync(userEmail, messageHehe);
+            await emailService.SendEmailAsync(userEmail, messageHehe,"");
 
             logger.LogInformation("Send reminder to user {UserId}: {Message}", userEmail, messageHehe);
         }

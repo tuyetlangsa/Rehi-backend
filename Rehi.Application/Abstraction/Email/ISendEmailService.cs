@@ -2,6 +2,6 @@
 
 public interface ISendEmailService
 {
-    Task ScheduleReminder(string userEmail, DateTime scheduledTime);
-    Task SendEmailAsync(string userEmail, string body);
+    Task ScheduleReminder(string userEmail, Guid userId, DateTime scheduledTime);
+    Task SendEmailAsync(string to, string body, string subject);
 }
