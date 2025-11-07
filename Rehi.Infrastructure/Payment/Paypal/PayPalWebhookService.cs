@@ -8,7 +8,6 @@ namespace Rehi.Infrastructure.Payment.Paypal;
 
 public class PayPalWebhookService(
     ILogger<PayPalWebhookService> logger,
-    IHttpClientFactory httpClientFactory,
     IConfiguration configuration) : IPayPalWebHookService
 {
     private readonly PayPalSettings _payPalSettings =
