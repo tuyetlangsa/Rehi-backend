@@ -12,7 +12,7 @@ public class SendEmail : IEndpoint
             {
                 var result =
                     await sender.Send(
-                        new Application.Email.SendEmail.SendEmail.Command(request.UserEmail, request.ScheduleTime));
+                        new Application.Email.SendEmail.SendEmail.Command(request.ScheduleTime));
                 return result.MatchOk();
             })
             .WithTags("Email")
@@ -22,7 +22,6 @@ public class SendEmail : IEndpoint
 
     internal sealed class Request
     {
-        public string UserEmail { get; set; } = null!;
-        public DateTime ScheduleTime { get; set; }
+        public string ScheduleTime { get; set; } = string.Empty;
     }
 }
