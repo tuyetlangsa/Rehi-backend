@@ -1,12 +1,16 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
+using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Payments;
 using Rehi.Domain.Payment;
 using Rehi.Domain.Subscription;
+using Rehi.Infrastructure.Payment.PayOS;
 
 namespace Rehi.Infrastructure.Paypal;
 
@@ -15,27 +19,38 @@ public class PayPalPaymentService : IPaymentService
     private readonly HttpClient _httpClient;
     private readonly ILogger<PayPalPaymentService> _logger;
     private readonly PayPalSettings _settings;
-
+    private readonly IDbContext _dbContext;
+    private readonly IOptions<SubscriptionOptions> _options;
     public PayPalPaymentService(HttpClient httpClient, ILogger<PayPalPaymentService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration, IDbContext dbContext, IOptions<SubscriptionOptions> options)
     {
         _httpClient = httpClient;
         _logger = logger;
         _settings = configuration.GetSection("PayPalSettings").Get<PayPalSettings>() ??
                     throw new ArgumentNullException(nameof(PayPalSettings));
+        _dbContext = dbContext;
+        _options = options;
     }
 
-    public async Task<PaymentCreateResult> CreateSubscriptionAsync(string planId)
+    public async Task<PaymentCreateResult> CreateSubscriptionAsync(Guid planId)
     {
         var token = await GetAccessTokenAsync();
-
+        var plan = await _dbContext.SubscriptionPlans.SingleOrDefaultAsync(s => s.Id == planId);
+        if (plan is null)
+        {
+            return new PaymentCreateResult
+            {
+                Success = false,
+                Message = "Plan not found"
+            };
+        }
         var payload = new PayPalSubscriptionCreateRequest
         {
-            plan_id = planId,
+            plan_id = plan.PaypalPlanId!,
             application_context = new PayPalApplicationContext
             {
-                return_url = "https://your-domain.com/api/paypal/success",
-                cancel_url = "https://your-domain.com/api/paypal/cancel"
+                return_url = _options.Value.Success,
+                cancel_url = _options.Value.Cancel,
             }
         };
         var json = JsonSerializer.Serialize(payload);

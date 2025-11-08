@@ -97,7 +97,7 @@ public class SendEmailService : ISendEmailService
             .ForJob(jobKey)
             .WithIdentity($"trigger-{Guid.NewGuid()}")
             .UsingJobData("userEmail", userEmail)
-            .UsingJobData("message", "Long oi Long dit me may")
+            .UsingJobData("message", message)
             .StartAt(scheduledTime)
             .Build();
 
