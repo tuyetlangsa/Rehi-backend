@@ -62,12 +62,12 @@ public static class DependencyInjection
         services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IPaymentFactory, PaymentFactory>();
+        services.AddPayPalHttpClient(configuration);
         services.AddHttpClient<PayPalPaymentService>(); // PayPal cần HttpClient
         services.AddScoped<PayOsPaymentService>();
         services.AddScoped<IPaymentFactory, PaymentFactory>();        
         services.AddScoped<IPayPalWebHookService, PayPalWebhookService>();
         //subscription
-        services.AddPayPalHttpClient(configuration);
         //need to refactor later
         services.AddScoped<ISendEmailService, SendEmailService>();
         services.AddQuartz(configurator =>

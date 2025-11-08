@@ -46,30 +46,35 @@ public abstract class CreateSubscription
                 return Result.Failure<Response>(SubscriptionErrors.AlreadyExists);
 
             var paymentService = paymentFactory.Create(request.Provider);
-            var paypalResult = await paymentService.CreateSubscriptionAsync(plan.PaypalPlanId!);
+            var paymentCreateResult = await paymentService.CreateSubscriptionAsync(plan.Id);
 
-            if (!paypalResult.Success)
+            if (!paymentCreateResult.Success)
                 return Result.Failure<Response>(SubscriptionErrors.FailedToCreate);
 
+            var now = DateTime.UtcNow;
+            var endDate = now.AddDays(plan.DurationDays);
+            
             var subscription = new UserSubscription
             {
                 UserId = user.Id,
                 SubscriptionPlanId = request.SubscriptionId,
                 PaymentProvider = request.Provider,
-                PayPalSubscriptionId = paypalResult.SubscriptionId,
+                PayPalSubscriptionId = request.Provider.Equals("paypal", StringComparison.OrdinalIgnoreCase) 
+                    ? paymentCreateResult.SubscriptionId 
+                    : string.Empty,
                 Status = SubscriptionStatus.Pending,
-                StartDate = DateTime.UtcNow,
-                EndDate = DateTime.UtcNow.AddDays(plan.DurationDays),
-                CurrentPeriodEnd = DateTime.UtcNow.AddDays(plan.DurationDays),
+                StartDate = now,
+                EndDate = endDate,
+                CurrentPeriodEnd = endDate,
                 AutoRenew = true
             };
-
+            
             dbContext.UserSubscriptions.Add(subscription);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return new Response(
-                paypalResult.ApprovalUrl,
-                paypalResult.SubscriptionId,
+                paymentCreateResult.ApprovalUrl,
+                paymentCreateResult.SubscriptionId,
                 request.Provider
             );
         }
