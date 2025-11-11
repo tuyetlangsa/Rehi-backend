@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using PayOS;
 using Quartz;
 using Rehi.Application;
 using Rehi.Application.Abstraction.Authentication;
@@ -15,6 +14,7 @@ using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Email;
 using Rehi.Application.Abstraction.Payments;
+using Rehi.Application.Abstraction.PayOs;
 using Rehi.Application.Abstraction.Paypal;
 using Rehi.Domain.Common;
 using Rehi.Infrastructure.Authentication;
@@ -41,8 +41,7 @@ public static class DependencyInjection
             .AddDatabase(configuration)
             .AddHealthChecks(configuration)
             .AddAuthenticationInternal(configuration)
-            .AddConfigServices(configuration)
-            .AddPayOsClient();
+            .AddConfigServices(configuration);
     }
 
     private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
@@ -67,6 +66,7 @@ public static class DependencyInjection
         services.AddScoped<PayOsPaymentService>();
         services.AddScoped<IPaymentFactory, PaymentFactory>();        
         services.AddScoped<IPayPalWebHookService, PayPalWebhookService>();
+        services.AddScoped<IPayOsWebhookService, PayOsWebhookService>();
         //subscription
         //need to refactor later
         services.AddScoped<ISendEmailService, SendEmailService>();
@@ -166,39 +166,4 @@ public static class DependencyInjection
         
         return services;
     }
-
-    private static IServiceCollection AddPayOsClient(this IServiceCollection services)
-    {
-        services.AddKeyedSingleton("PayOsClient", (sp, key) =>
-        {
-            var logger = sp.GetRequiredService<ILogger<PayOSClient>>();
-            try
-            {
-                var options = sp.GetRequiredService<IOptions<PayOsOptions>>().Value;
-
-                if (string.IsNullOrWhiteSpace(options.ClientId) ||
-                    string.IsNullOrWhiteSpace(options.ApiKey) ||
-                    string.IsNullOrWhiteSpace(options.CheckSum))
-                {
-                    throw new InvalidOperationException("PayOS configuration is missing required values (ClientId / ApiKey / ChecksumKey).");
-                }
-
-                return new PayOSClient(new PayOSOptions
-                {
-                    ClientId = options.ClientId,
-                    ApiKey = options.ApiKey,
-                    ChecksumKey = options.CheckSum,
-                    LogLevel = LogLevel.Debug,
-                });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to initialize PayOS client for key: {ClientKey}", key);
-                throw; 
-            }
-        });
-
-        return services;
-    }
-
 }

@@ -59,9 +59,7 @@ public abstract class CreateSubscription
                 UserId = user.Id,
                 SubscriptionPlanId = request.SubscriptionId,
                 PaymentProvider = request.Provider,
-                PayPalSubscriptionId = request.Provider.Equals("paypal", StringComparison.OrdinalIgnoreCase) 
-                    ? paymentCreateResult.SubscriptionId 
-                    : string.Empty,
+                ExternalSubscriptionId = paymentCreateResult.SubscriptionId,
                 Status = SubscriptionStatus.Pending,
                 StartDate = now,
                 EndDate = endDate,

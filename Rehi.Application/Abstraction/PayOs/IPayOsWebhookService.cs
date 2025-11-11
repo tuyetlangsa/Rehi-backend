@@ -4,6 +4,6 @@ namespace Rehi.Application.Abstraction.PayOs;
 
 public interface IPayOsWebhookService
 {
-        Task<PayOsWebhookResponse> ReceivePayOsWebhook(string subscriptionId, string eventType);
+        Task<PayOsWebhookResponse> ReceivePayOsWebhook(Stream rawBody);
     
 }
