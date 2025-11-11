@@ -36,7 +36,7 @@ public class CancelSubscription
             if (subscription is null)
                 return Result.Failure<Response>(SubscriptionErrors.NotFound);
 
-            if (string.IsNullOrEmpty(subscription.PayPalSubscriptionId))
+            if (string.IsNullOrEmpty(subscription.ExternalSubscriptionId))
             {
                 logger.LogWarning("PayPal subscription ID is missing for subscription {Id}", subscription.Id);
                 return Result.Failure<Response>(SubscriptionErrors.InvalidSubscription);
@@ -45,7 +45,7 @@ public class CancelSubscription
             var paymentService = paymentFactory.Create(request.Provider);
             var cancelRequest = new PaymentCancelRequest
             {
-                SubscriptionId = subscription.PayPalSubscriptionId,
+                SubscriptionId = subscription.ExternalSubscriptionId,
                 Reason = "User requested cancellation"
             };
 
