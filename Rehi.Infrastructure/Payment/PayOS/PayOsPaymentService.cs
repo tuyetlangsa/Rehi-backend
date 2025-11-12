@@ -91,9 +91,55 @@ public class PayOsPaymentService : IPaymentService
         }
     }
 
-    public Task<PaymentCancelResult> CancelSubscriptionAsync(PaymentCancelRequest request)
+    public async Task<PaymentCancelResult> CancelSubscriptionAsync(PaymentCancelRequest request)
     {
-        throw new NotImplementedException("Subscription cancellation is not yet implemented");
+        if (request.SubscriptionId == null)
+        {
+            return new PaymentCancelResult
+            {
+                Success = false,
+                Message = "Invalid subscription ID."
+            };
+        }
+
+        // Find subscription by ID
+        var subscription = await _dbContext.UserSubscriptions
+            .FirstOrDefaultAsync(s => s.ExternalSubscriptionId == request.SubscriptionId);
+
+        if (subscription == null)
+        {
+            return new PaymentCancelResult
+            {
+                Success = false,
+                Message = "Subscription not found."
+            };
+        }
+
+        // Only cancel if it's still active
+        if (subscription.Status == SubscriptionStatus.Cancelled)
+        {
+            return new PaymentCancelResult
+            {
+                Success = false,
+                Message = "Subscription already cancelled."
+            };
+        }
+
+        // Update the status
+        subscription.Status = SubscriptionStatus.Cancelled;
+        subscription.CancelledAt = DateTime.UtcNow;
+
+        _dbContext.UserSubscriptions.Update(subscription);
+        await _dbContext.SaveChangesAsync();
+
+        // Optionally call PayOS API to cancel payment request if needed
+        // await _payOsService.CancelPaymentAsync(subscription.PaymentId);
+
+        return new PaymentCancelResult
+        {
+            Success = true,
+            Message = "Subscription cancelled successfully.",
+        };
     }
 
     // Private helper methods
