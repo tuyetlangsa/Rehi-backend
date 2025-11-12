@@ -38,7 +38,7 @@ public class CancelSubscription
 
             if (string.IsNullOrEmpty(subscription.ExternalSubscriptionId))
             {
-                logger.LogWarning("PayPal subscription ID is missing for subscription {Id}", subscription.Id);
+                logger.LogWarning("External subscription ID is missing for subscription {Id}", subscription.Id);
                 return Result.Failure<Response>(SubscriptionErrors.InvalidSubscription);
             }
 
