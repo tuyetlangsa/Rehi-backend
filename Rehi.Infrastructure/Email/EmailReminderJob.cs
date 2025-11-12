@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using Quartz;
+using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Email;
 
 namespace Rehi.Infrastructure.EmailService;
 
-public class EmailReminderJob(ILogger<EmailReminderJob> logger, ISendEmailService emailService) : IJob
+public class EmailReminderJob(ILogger<EmailReminderJob> logger, ISendEmailService emailService, IDbContext dbContext) : IJob
 {
     public const string Name = nameof(EmailReminderJob);
 
@@ -14,7 +15,7 @@ public class EmailReminderJob(ILogger<EmailReminderJob> logger, ISendEmailServic
 
         var userEmail = data.GetString("userEmail");
         //string? message = data.GetString("message");
-        var messageHehe = "TEST TEST TEST TEST TEST";
+        var messageHehe = data.GetString("message");
 
         try
         {

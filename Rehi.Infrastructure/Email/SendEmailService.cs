@@ -78,8 +78,20 @@ public class SendEmailService : ISendEmailService
     public async Task ScheduleReminder(string userEmail, Guid userId, DateTime scheduledTime)
     {
         var scheduler = await _schedulerFactory.GetScheduler();
-        
+
         var jobKey = new JobKey(EmailReminderJob.Name);
+
+        // Nếu job chưa tồn tại thì thêm
+        if (!await scheduler.CheckExists(jobKey))
+        {
+            var job = JobBuilder.Create<EmailReminderJob>()
+                .WithIdentity(jobKey)
+                .Build();
+
+            await scheduler.AddJob(job, true);
+        }
+
+        // Lấy danh sách flashcards hôm nay
         var today = DateTime.UtcNow.Date;
 
         var flashcards = await _dbContext.Flashcards
@@ -87,19 +99,31 @@ public class SendEmailService : ISendEmailService
             .ThenInclude(h => h.User)
             .Where(fc => fc.Highlight.UserId == userId && fc.DueDate == today)
             .ToListAsync();
-        
+
         var message = flashcards.Any()
             ? $"You have {flashcards.Count} flashcards due today:\n" +
               string.Join("\n", flashcards.Select(fc => $"- {fc.Highlight.PlainText}"))
-            : "No flashcards due today. Keep learning!";        
-        
+            : "No flashcards due today. Keep learning!";
+
+        // Nếu giờ hẹn là giờ local → convert sang giờ UTC (Quartz dùng UTC)
+        var utcTime = scheduledTime.ToUniversalTime();
+
+        // Cron biểu thức: "0 MINUTE HOUR * * ?" → chạy mỗi ngày đúng giờ đó
+        var cronExpression = $"0 {utcTime.Minute} {utcTime.Hour} * * ?";
+
+        var triggerKey = new TriggerKey($"daily-trigger-{userId}");
+
         var trigger = TriggerBuilder.Create()
             .ForJob(jobKey)
-            .WithIdentity($"trigger-{Guid.NewGuid()}")
+            .WithIdentity(triggerKey)
             .UsingJobData("userEmail", userEmail)
-            .UsingJobData("message", "Long oi Long dit me may")
-            .StartAt(scheduledTime)
+            .UsingJobData("message", message)
+            .WithCronSchedule(cronExpression)
             .Build();
+
+        // Nếu trigger cũ đã tồn tại thì xóa rồi tạo lại (tránh duplicate)
+        if (await scheduler.CheckExists(triggerKey))
+            await scheduler.UnscheduleJob(triggerKey);
 
         await scheduler.ScheduleJob(trigger);
     }
