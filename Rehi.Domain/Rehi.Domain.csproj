@@ -10,4 +10,8 @@
       <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.2.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Payment\PayOs\" />
+    </ItemGroup>
+
 </Project>

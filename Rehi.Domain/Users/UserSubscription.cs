@@ -21,5 +21,5 @@ public class UserSubscription : Entity
     public SubscriptionPlan SubscriptionPlan { get; set; } = null!;
     public string PaymentProvider { get; set; } = null!;
     public SubscriptionStatus Status { get; set; }
-    public string PayPalSubscriptionId { get; set; } = null!;
+    public string? ExternalSubscriptionId { get; set; } = null!;
 }

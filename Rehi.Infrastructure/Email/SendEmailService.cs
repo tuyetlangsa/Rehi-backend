@@ -115,7 +115,7 @@ public class SendEmailService : ISendEmailService
 
         var trigger = TriggerBuilder.Create()
             .ForJob(jobKey)
-            .WithIdentity(triggerKey)
+            .WithIdentity($"trigger-{Guid.NewGuid()}")
             .UsingJobData("userEmail", userEmail)
             .UsingJobData("message", message)
             .WithCronSchedule(cronExpression)

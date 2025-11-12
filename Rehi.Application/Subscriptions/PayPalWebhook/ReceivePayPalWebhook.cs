@@ -79,7 +79,7 @@ public abstract class ReceivePayPalWebhook
         {
             var subscription = await dbContext.UserSubscriptions
                 .Include(s => s.SubscriptionPlan)
-                .SingleOrDefaultAsync(us => us.PayPalSubscriptionId == subscriptionId, cancellationToken);
+                .SingleOrDefaultAsync(us => us.ExternalSubscriptionId == subscriptionId, cancellationToken);
 
             if (subscription is null)
             {

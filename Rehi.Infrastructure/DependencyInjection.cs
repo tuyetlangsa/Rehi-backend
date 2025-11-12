@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Quartz;
 using Rehi.Application;
@@ -12,6 +14,7 @@ using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Application.Abstraction.Email;
 using Rehi.Application.Abstraction.Payments;
+using Rehi.Application.Abstraction.PayOs;
 using Rehi.Application.Abstraction.Paypal;
 using Rehi.Domain.Common;
 using Rehi.Infrastructure.Authentication;
@@ -20,6 +23,7 @@ using Rehi.Infrastructure.Database;
 using Rehi.Infrastructure.EmailService;
 using Rehi.Infrastructure.Outbox;
 using Rehi.Infrastructure.Payment;
+using Rehi.Infrastructure.Payment.PayOS;
 using Rehi.Infrastructure.Payment.Paypal;
 using Rehi.Infrastructure.Paypal;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
@@ -36,7 +40,8 @@ public static class DependencyInjection
             .AddDomainEventHandlers()
             .AddDatabase(configuration)
             .AddHealthChecks(configuration)
-            .AddAuthenticationInternal(configuration);
+            .AddAuthenticationInternal(configuration)
+            .AddConfigServices(configuration);
     }
 
     private static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
@@ -56,10 +61,13 @@ public static class DependencyInjection
         services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IPaymentFactory, PaymentFactory>();
-        services.AddScoped<IPaymentService, PayPalPaymentService>();
-        services.AddScoped<IPayPalWebHookService, PayPalWebhookService>();
-        //subscription
         services.AddPayPalHttpClient(configuration);
+        services.AddHttpClient<PayPalPaymentService>(); // PayPal cần HttpClient
+        services.AddScoped<PayOsPaymentService>();
+        services.AddScoped<IPaymentFactory, PaymentFactory>();        
+        services.AddScoped<IPayPalWebHookService, PayPalWebhookService>();
+        services.AddScoped<IPayOsWebhookService, PayOsWebhookService>();
+        //subscription
         //need to refactor later
         services.AddScoped<ISendEmailService, SendEmailService>();
         services.AddQuartz(configurator =>
@@ -143,6 +151,19 @@ public static class DependencyInjection
                 };
             });
         services.AddHttpContextAccessor();
+        return services;
+    }
+
+    private static IServiceCollection AddConfigServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<PayOsOptions>()
+            .Bind(configuration.GetSection(PayOsOptions.PayOs))
+            .ValidateDataAnnotations();
+        
+        services.AddOptions<SubscriptionOptions>()
+            .Bind(configuration.GetSection(SubscriptionOptions.Subscription))
+            .ValidateDataAnnotations();
+        
         return services;
     }
 }
