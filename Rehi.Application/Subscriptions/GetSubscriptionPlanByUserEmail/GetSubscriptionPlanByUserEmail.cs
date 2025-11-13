@@ -14,7 +14,8 @@ public record SubscriptionPlanDto(
     decimal Price,
     string Description,
     SubscriptionStatus Status,
-    DateTime? CurrentPeriodEnd
+    DateTime? CurrentPeriodEnd,
+    string Provider
 );
 
 public class GetSubscriptionPlanByUserEmail
@@ -50,7 +51,8 @@ public class GetSubscriptionPlanByUserEmail
                     plan.Price,
                     plan.Description,
                     subscriptionPlanOfUser.Status,
-                    subscriptionPlanOfUser.CurrentPeriodEnd
+                    subscriptionPlanOfUser.CurrentPeriodEnd,
+                    subscriptionPlanOfUser.PaymentProvider
                 );
 
                 return new Response(planDto);

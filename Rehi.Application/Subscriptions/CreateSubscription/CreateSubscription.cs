@@ -39,7 +39,7 @@ public abstract class CreateSubscription
             var hasActiveSubscription = await dbContext.UserSubscriptions
                 .AnyAsync(s =>
                         s.UserId == user.Id &&
-                        (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Pending),
+                        (s.Status == SubscriptionStatus.Active),
                     cancellationToken);
 
             if (hasActiveSubscription)

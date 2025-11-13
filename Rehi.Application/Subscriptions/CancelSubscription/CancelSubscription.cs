@@ -30,7 +30,7 @@ public class CancelSubscription
                 .Include(us => us.User)
                 .Where(us =>
                     us.User.Email == userContext.Email &&
-                    (us.Status == SubscriptionStatus.Active || us.Status == SubscriptionStatus.Pending))
+                    (us.Status == SubscriptionStatus.Active))
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (subscription is null)

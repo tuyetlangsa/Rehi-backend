@@ -23,7 +23,9 @@ public abstract class CreateUser
             {
                 Id = Guid.NewGuid(),
                 Email = request.Email,
-                FullName = request.FullName
+                FullName = request.FullName,
+                CreateAt = DateTime.UtcNow,
+                ScheduleTime = DateTime.UtcNow
             };
             dbContext.Users.Add(user);
             await dbContext.SaveChangesAsync(cancellationToken);
