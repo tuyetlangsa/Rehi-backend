@@ -13,7 +13,7 @@ public class User : Entity
     public ICollection<Article> Articles { get; set; } = new List<Article>();
     public ICollection<Tag> Tags { get; set; } = new List<Tag>();
     public DateTime ScheduleTime { get; set; }
-
+    public DateTime? CreateAt { get; set; }
     public virtual ICollection<Highlight> Highlights { get; set; } = new List<Highlight>();
     public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }
