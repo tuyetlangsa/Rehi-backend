@@ -42,7 +42,7 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
                 Price = 0,
                 Description =
                     "Perfect for new users. Includes: Basic note taking, Save up to 10 articles per day, Manual flashcard creation, Unlimited access, Cross device access.",
-                DurationDays = 30
+                DurationDays = 30,
             },
             new()
             {
@@ -52,7 +52,8 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
                 Description =
                     "Ideal for university students or researchers. Includes: Smart notes powered by AI, Auto flashcards, Quick note formatting, Spaced repetition reminders, Unlimited materials.",
                 DurationDays = 30,
-                PaypalPlanId = "P-4XP87117T0561114KND6LNKQ"
+                PaypalPlanId = "P-4XP87117T0561114KND6LNKQ",
+                TypeOfSubscription = "month"
             },
             new()
             {
@@ -62,7 +63,8 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
                 Description =
                     "Designed for study groups or teams. Includes: All Premium features, Shared group notes, Group flashcards, Personalized suggestions, Group dashboard.",
                 DurationDays = 30,
-                PaypalPlanId = "P-06H31651K2C745930END6LNYA"
+                PaypalPlanId = "P-06H31651K2C745930END6LNYA",
+                TypeOfSubscription = "month"
             },
             new()
             {
@@ -73,6 +75,7 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
                     "Ideal for university students or researchers. Includes: Smart notes powered by AI, Auto flashcards, Mind maps, Translation, PDF export, Unlimited materials.",
                 DurationDays = 365,
                 PaypalPlanId = "P-5XF55308K77570807ND6LOKI"
+                ,TypeOfSubscription = "year"
             },
             new()
             {
@@ -82,7 +85,8 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
                 Description =
                     "Tailored for schools or organizations. Includes: LMS, Admin dashboard, Role-based access, Customization, Full onboarding & support.",
                 DurationDays = 365,
-                PaypalPlanId = "P-2HE25455557244027ND6LOSQ"
+                PaypalPlanId = "P-2HE25455557244027ND6LOSQ",
+                TypeOfSubscription = "year"
             }
         });
     }
