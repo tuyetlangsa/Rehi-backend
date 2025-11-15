@@ -11,5 +11,6 @@ public class SubscriptionPlan : Entity
     public int DurationDays { get; set; }
     public string Description { get; set; } = string.Empty;
     public string? PaypalPlanId { get; set; }
+    public string? TypeOfSubscription { get; set; } = string.Empty;
     public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }
