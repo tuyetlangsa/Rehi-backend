@@ -17,6 +17,7 @@ using Rehi.Application.Abstraction.Email;
 using Rehi.Application.Abstraction.Payments;
 using Rehi.Application.Abstraction.PayOs;
 using Rehi.Application.Abstraction.Paypal;
+using Rehi.Application.Auth;
 using Rehi.Domain.Common;
 using Rehi.Infrastructure.Authentication;
 using Rehi.Infrastructure.Clock;
@@ -190,6 +191,12 @@ public static class DependencyInjection
         services.AddOptions<SubscriptionOptions>()
             .Bind(configuration.GetSection(SubscriptionOptions.Subscription))
             .ValidateDataAnnotations();
+
+        services.AddOptions<WebAppOptions>()
+            .Bind(configuration.GetSection(WebAppOptions.Section))
+            .Validate(o => Uri.TryCreate(o.WebBaseUrl, UriKind.Absolute, out _),
+                "Rehi:WebBaseUrl must be an absolute URL")
+            .ValidateOnStart();
         
         return services;
     }
