@@ -18,7 +18,7 @@ public class ExtensionSession : IEndpoint
             .WithName("CreateExtensionSession");
     }
 
-    // JwtBearer maps the token's "sid" claim to ClaimTypes.Sid.
+    // JsonWebTokenHandler's inbound claim map leaves "sid" as is.
     private static Guid? SessionId(ClaimsPrincipal user) =>
-        Guid.TryParse(user.FindFirstValue(ClaimTypes.Sid), out var sessionId) ? sessionId : null;
+        Guid.TryParse(user.FindFirstValue("sid"), out var sessionId) ? sessionId : null;
 }
