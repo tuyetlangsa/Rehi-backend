@@ -82,10 +82,15 @@ cmd_up() {
     || { tail -30 "${STATE_DIR}/build.log"; die "build failed (full log: ${STATE_DIR}/build.log)"; }
 
   echo "verify: starting API on ${BASE_URL}"
+  local jwt_secret; jwt_secret="$(openssl rand -base64 48)"
   (
     cd "${REPO_ROOT}/Rehi.Apis"
     ASPNETCORE_ENVIRONMENT=Development \
     ASPNETCORE_URLS="${BASE_URL}" \
+    Jwt__Secret="${jwt_secret}" \
+    Jwt__Issuer=rehi-verify \
+    Jwt__Audience=rehi-verify-api \
+    Rehi__WebBaseUrl=http://localhost:3000 \
     ConnectionStrings__Database="Host=127.0.0.1;Port=${PG_PORT};Database=rehi;Username=postgres;Password=${PG_PASSWORD}" \
     Serilog__WriteTo__1__Args__ServerUrl="http://127.0.0.1:1" \
     SendEmail__Host=127.0.0.1 \

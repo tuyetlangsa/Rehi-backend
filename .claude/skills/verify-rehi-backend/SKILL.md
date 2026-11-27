@@ -28,7 +28,7 @@ For a second instance at the same time (another worktree), set `REHI_VERIFY_API_
 $S up
 ```
 
-It starts `postgres:17` on tmpfs and `axllent/mailpit:v1.21.8`, waits until postgres accepts TCP queries and Mailpit's HTTP API answers, runs `dotnet build` on `Rehi.Apis`, then starts the built `Rehi.Apis.dll` in `Development` with the connection string and Seq URL overridden and SMTP pointed at Mailpit (`SendEmail__Host`, `__Port`, `__Security=None`, dummy user and password). Mailpit accepts any SMTP login, so no email the verify instance sends ever reaches Gmail. The API applies all EF migrations before it listens. Ready is the line `verify: ready` with the evidence path. It also means `/swagger/v1/swagger.json` answered 200 with the schema in place. A cold run takes about 10 seconds after the first build.
+It starts `postgres:17` on tmpfs and `axllent/mailpit:v1.21.8`, waits until postgres accepts TCP queries and Mailpit's HTTP API answers, runs `dotnet build` on `Rehi.Apis`, then starts the built `Rehi.Apis.dll` in `Development` with the connection string and Seq URL overridden, SMTP pointed at Mailpit (`SendEmail__Host`, `__Port`, `__Security=None`, dummy user and password), and the Rehi token settings set by env: a random 64-character `Jwt__Secret` for each run, `Jwt__Issuer=rehi-verify`, `Jwt__Audience=rehi-verify-api`, and `Rehi__WebBaseUrl=http://localhost:3000`. The API refuses to start when `Jwt:Secret` is shorter than 32 bytes or when `Jwt:Issuer`, `Jwt:Audience`, or `Rehi:WebBaseUrl` is missing. Mailpit accepts any SMTP login, so no email the verify instance sends ever reaches Gmail. The API applies all EF migrations before it listens. Ready is the line `verify: ready` with the evidence path. It also means `/swagger/v1/swagger.json` answered 200 with the schema in place. A cold run takes about 10 seconds after the first build.
 
 `up` refuses to start if this port pair already has a running instance, or if either port is taken by something it did not start. Reuse the running instance or pick other ports. Never kill the other process.
 
@@ -76,9 +76,9 @@ Timestamps in request bodies (`createAt`, `updateAt` and the route segments with
 
 ### Authentication
 
-Every endpoint except `/payos/webhook` and `/paypal/webhook` calls `RequireAuthorization()`. The API resolves the caller by the token's email claim and looks that email up in `Users`. Today the only accepted tokens are Auth0 access tokens. This skill has no way to mint one, so every authenticated journey in `features/` is **BLOCKED** until a token source exists. Report it as blocked, with the journey name. Never report it as passed. Do not work around it with a test-only endpoint, a relaxed auth scheme, or a hand-forged JWT.
+Every endpoint except `/payos/webhook`, `/paypal/webhook`, and `/auth/*` calls `RequireAuthorization()`. The API resolves the caller by the token's email claim and looks that email up in `Users`. It accepts two token kinds. A Rehi access token is an HS256 JWT that this instance issues at `POST /auth/login`. An Auth0 access token comes from the web app's Auth0 sign-in, and this skill cannot mint one.
 
-When native email/password login lands, add its register and login journey to `features/`. That journey sets `REHI_VERIFY_TOKEN`, and the blocked journeys become runnable.
+Get a token from the [Native auth](features/native-auth.md) journey. It registers `verify@rehi.test`, reads the verification link from Mailpit, signs in, and exports `REHI_VERIFY_TOKEN`. Every authenticated journey in `features/` runs with that token. A path that needs an Auth0 token is unverifiable here. Report it as unverifiable, with the journey name. Do not work around it with a test-only endpoint, a relaxed auth scheme, or a hand-forged JWT.
 
 ### Email
 
@@ -91,7 +91,7 @@ $S mail-token user@example.com reset    # token from {Rehi:WebBaseUrl}/reset-pas
 
 It prints only the token, so `TOKEN="$($S mail-token ...)"` feeds the next `call`. It saves the message JSON as `mail-<kind>-<to>.json` in the evidence directory. It fails when the address has no email or the newest one has no link of that kind. Browse the inbox at `http://127.0.0.1:58025`.
 
-`$S mail-selftest` sends one message over SMTP with both link shapes to a fresh address and checks that `mail-token` reads both tokens back. No endpoint sends verify or reset emails yet, so until native register and forgot-password land, `mail-token` is proven only against that hand-sent message.
+`$S mail-selftest` sends one message over SMTP with both link shapes to a fresh address and checks that `mail-token` reads both tokens back. Register and resend-verification send verify emails through the outbox, so a verify link lands within about 5 s. No endpoint sends reset emails yet, so `mail-token ... reset` is proven only against the self-test message.
 
 ## Evidence
 
