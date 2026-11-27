@@ -10,6 +10,8 @@ public class User : Entity
     public Guid Id { get; set; }
     public string Email { get; set; } = null!;
     public string FullName { get; set; } = null!;
+    public string? PasswordHash { get; set; }
+    public DateTime? EmailVerifiedAt { get; set; }
     public ICollection<Article> Articles { get; set; } = new List<Article>();
     public ICollection<Tag> Tags { get; set; } = new List<Tag>();
     public DateTime ScheduleTime { get; set; }

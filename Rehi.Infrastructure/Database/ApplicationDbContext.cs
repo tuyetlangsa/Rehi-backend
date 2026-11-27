@@ -30,4 +30,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public DbSet<Flashcard> Flashcards { get; set; }
     public DbSet<FlashCardReview> FlashCardReviews { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<EmailToken> EmailTokens { get; set; }
 }
