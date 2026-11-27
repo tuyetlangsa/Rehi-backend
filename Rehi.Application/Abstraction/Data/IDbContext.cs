@@ -24,6 +24,8 @@ public interface IDbContext
     public DbSet<Flashcard> Flashcards { get; set; }
 
     public DbSet<FlashCardReview> FlashCardReviews { get; set; }
+    DbSet<RefreshToken> RefreshTokens { get; set; }
+    DbSet<EmailToken> EmailTokens { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
