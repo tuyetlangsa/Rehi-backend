@@ -70,7 +70,7 @@ $S sql 'select "Id","Email" from "Users"'
 $S sql 'select count(*) from "Articles"'
 ```
 
-Use `sql` only to observe. Seeding state must go through the API, the same path a user takes.
+Use `sql` only to observe. Seeding state must go through the API, the same path a user takes. The one exception is the passwordless row an Auth0 sign-in creates: `POST /users` creates only the caller's own row, so without an Auth0 token the journeys insert that row with `sql`.
 
 Timestamps in request bodies (`createAt`, `updateAt` and the route segments with those names) are Unix epoch milliseconds.
 

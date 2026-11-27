@@ -4,7 +4,7 @@ A signed-in user saves a page by URL. The first save stores it, a second save of
 
 ## Sub-features
 
-- `article-onboard` creates the user's row. A native user gets it from register (`POST /auth/register`). An Auth0 user gets it from `POST /users` after the first Auth0 sign-in.
+- `article-onboard` creates the user's row. A native user gets it from register (`POST /auth/register`). An Auth0 user gets it from `POST /users` after the first Auth0 sign-in. `POST /users` takes the email from the caller's token and ignores any `email` in the body. When a row with that email exists in any letter case, it returns that row's id and creates nothing.
 - `article-save` stores a new article (`POST /articles/get-or-add`).
 - `article-get-existing` returns the stored article for a known URL.
 - `article-sync` lists it in `GET /states` and `GET /states/{lastUpdateTime}`.
@@ -24,10 +24,11 @@ Preconditions:
 - [Native auth](./native-auth.md) ran through **Export the token**, so `REHI_VERIFY_TOKEN` holds an access token whose email claim is `verify@rehi.test`.
 
 - **Onboard.** The native-auth **Register** step created the user. `scripts/verify.sh sql 'select "Email" from "Users" where "EmailVerifiedAt" is not null'` prints `verify@rehi.test`.
+- **Onboard ignores the body email.** Run `scripts/verify.sh call users-other-email -X POST -H 'Content-Type: application/json' -d '{"email":"Someone.Else@rehi.test","fullName":"Someone Else"}' /users`. Status `200`, and `data` is the `Id` of `verify@rehi.test`. `scripts/verify.sh sql "select count(*) from \"Users\" where lower(\"Email\") = 'someone.else@rehi.test'"` prints `0`.
 - **Save.** Run `scripts/verify.sh call article-save -X POST -H 'Content-Type: application/json' -d '{"id":"11111111-1111-1111-1111-111111111111","url":"https://example.com/verify","rawHtml":"<html><body><h1>Verify</h1><p>Body text</p></body></html>","title":"Verify","createAt":1795000000000}' /articles/get-or-add`. Status `201` for a new article. The body contains the article id and URL.
 - **Same URL again.** Repeat the save with a different `id`. Status `200`, and the body returns the original id. `scripts/verify.sh sql 'select count(*) from "Articles"'` prints `1`.
 - **Sync.** Run `scripts/verify.sh call states-all /states`. Status `200`. The body lists the article.
-- **Proof.** The evidence holds the three call files plus the SQL reads.
+- **Proof.** The evidence holds the four call files plus the SQL reads.
 
 ## Gotchas
 

@@ -13,7 +13,7 @@ This directory is the maintained source for verifying what Rehi API clients (the
 
 - Start every journey from the baseline unless its preconditions say otherwise.
 - Drive with `scripts/verify.sh call <name> ...`, one evidence name per user action.
-- Seed through the API only. `scripts/verify.sh sql` is for reading.
+- Seed through the API only. `scripts/verify.sh sql` is for reading. The one exception is the passwordless Auth0-style row, which needs an Auth0 token to create through the API (see [Password reset](./password-reset.md), Gotchas).
 - Timestamps in bodies and routes are Unix epoch milliseconds.
 
 ## Proof and skip reporting
