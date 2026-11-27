@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -138,8 +139,19 @@ public static class DependencyInjection
     {
         var auth0Options = configuration.GetSection("Auth0").Get<Auth0Options>()!;
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+        services.AddOptions<RehiJwtOptions>()
+            .Bind(configuration.GetSection(RehiJwtOptions.Section))
+            .Validate(o => Encoding.UTF8.GetByteCount(o.Secret) >= RehiJwtOptions.MinimumSecretBytes,
+                $"Jwt:Secret must be at least {RehiJwtOptions.MinimumSecretBytes} bytes for HS256")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Issuer), "Jwt:Issuer is required")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Audience), "Jwt:Audience is required")
+            .Validate(o => o.ExpirationInMinutes > 0, "Jwt:ExpirationInMinutes must be positive")
+            .ValidateOnStart();
+
+        services.AddAuthentication(AuthSchemes.Default)
+            .AddPolicyScheme(AuthSchemes.Default, null, options =>
+                options.ForwardDefaultSelector = AuthSchemes.SelectByIssuer)
+            .AddJwtBearer(AuthSchemes.Auth0, options =>
             {
                 options.Authority = $"https://{auth0Options.Domain}";
                 options.Audience = auth0Options.Audience;
@@ -149,7 +161,22 @@ public static class DependencyInjection
                     ValidateAudience = true,
                     ValidateIssuer = true
                 };
-            });
+            })
+            .AddJwtBearer(AuthSchemes.Rehi, _ => { });
+
+        services.AddOptions<JwtBearerOptions>(AuthSchemes.Rehi)
+            .Configure<IOptions<RehiJwtOptions>>((options, rehi) =>
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = rehi.Value.Issuer,
+                    ValidAudience = rehi.Value.Audience,
+                    IssuerSigningKey = rehi.Value.SigningKey(),
+                    ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                    ClockSkew = TimeSpan.FromSeconds(30)
+                });
+
+        services.AddSingleton<ITokenIssuer, TokenIssuer>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddHttpContextAccessor();
         return services;
     }
