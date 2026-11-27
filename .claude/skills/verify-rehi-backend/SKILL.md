@@ -18,8 +18,9 @@ The instance is isolated from the dev's own stack. The dev usually has a Docker 
 | API | `http://127.0.0.1:5299` | `:5204` |
 | Postgres | container `rehi-verify-pg-55432` on `127.0.0.1:55432`, tmpfs | container `postgres` on `:5432` |
 | Logs | `~/.cache/rehi-verify/run-5299/api.log` (Seq sink pointed at a dead port) | Seq `:5341` |
+| Mail | container `rehi-verify-mailpit-51025`, SMTP `127.0.0.1:51025`, HTTP `http://127.0.0.1:58025` | Gmail SMTP from `appsettings` |
 
-For a second instance at the same time (another worktree), set `REHI_VERIFY_API_PORT` and `REHI_VERIFY_PG_PORT` on every command.
+For a second instance at the same time (another worktree), set `REHI_VERIFY_API_PORT`, `REHI_VERIFY_PG_PORT`, `REHI_VERIFY_SMTP_PORT`, and `REHI_VERIFY_MAIL_PORT` on every command.
 
 ## Launch
 
@@ -27,7 +28,7 @@ For a second instance at the same time (another worktree), set `REHI_VERIFY_API_
 $S up
 ```
 
-It starts `postgres:17` on tmpfs, waits until it accepts TCP queries, runs `dotnet build` on `Rehi.Apis`, then starts the built `Rehi.Apis.dll` in `Development` with the connection string, Seq URL, and SMTP credentials overridden. The API applies all EF migrations before it listens. Ready is the line `verify: ready` with the evidence path. It also means `/swagger/v1/swagger.json` answered 200 with the schema in place. A cold run takes about 10 seconds after the first build.
+It starts `postgres:17` on tmpfs and `axllent/mailpit:v1.21.8`, waits until postgres accepts TCP queries and Mailpit's HTTP API answers, runs `dotnet build` on `Rehi.Apis`, then starts the built `Rehi.Apis.dll` in `Development` with the connection string and Seq URL overridden and SMTP pointed at Mailpit (`SendEmail__Host`, `__Port`, `__Security=None`, dummy user and password). Mailpit accepts any SMTP login, so no email the verify instance sends ever reaches Gmail. The API applies all EF migrations before it listens. Ready is the line `verify: ready` with the evidence path. It also means `/swagger/v1/swagger.json` answered 200 with the schema in place. A cold run takes about 10 seconds after the first build.
 
 `up` refuses to start if this port pair already has a running instance, or if either port is taken by something it did not start. Reuse the running instance or pick other ports. Never kill the other process.
 
@@ -43,6 +44,7 @@ Read-only. Every line must say `OK`:
 - `swagger.json` answers 200
 - `/states` without a token answers 401, which proves the auth pipeline is on
 - the verify postgres container is running
+- the Mailpit container is running and `/api/v1/info` answers 200
 - `__EFMigrationsHistory` row count equals the migration files in `Rehi.Infrastructure/Database/Migrations`
 
 Run it first whenever anything looks off. A `FAIL` on migrations after you added one means the new migration did not apply. Read `api.log`.
@@ -78,6 +80,19 @@ Every endpoint except `/payos/webhook` and `/paypal/webhook` calls `RequireAutho
 
 When native email/password login lands, add its register and login journey to `features/`. That journey sets `REHI_VERIFY_TOKEN`, and the blocked journeys become runnable.
 
+### Email
+
+Every email the instance sends lands in Mailpit. Read a token out of the newest email to an address:
+
+```bash
+$S mail-token user@example.com verify   # token from {Rehi:WebBaseUrl}/verify-email?token=...
+$S mail-token user@example.com reset    # token from {Rehi:WebBaseUrl}/reset-password?token=...
+```
+
+It prints only the token, so `TOKEN="$($S mail-token ...)"` feeds the next `call`. It saves the message JSON as `mail-<kind>-<to>.json` in the evidence directory. It fails when the address has no email or the newest one has no link of that kind. Browse the inbox at `http://127.0.0.1:58025`.
+
+`$S mail-selftest` sends one message over SMTP with both link shapes to a fresh address and checks that `mail-token` reads both tokens back. No endpoint sends verify or reset emails yet, so until native register and forgot-password land, `mail-token` is proven only against that hand-sent message.
+
 ## Evidence
 
 Evidence lives in `~/.cache/rehi-verify/evidence/<run-id>/` (`$S evidence` prints it). It survives `down`, and `down` also copies `api.log` into it. A proof includes:
@@ -95,7 +110,7 @@ Exercise the real endpoint a client calls. Mock nothing. Chat (`/chat`, `/chat-w
 $S down
 ```
 
-It stops only the API pid it recorded, removes only the postgres container that carries its `rehi-verify=1` label, and deletes the run state. It never kills by process name, and it never removes evidence. Run it after every attempt, failed ones included.
+It stops only the API pid it recorded, removes only the postgres and Mailpit containers that carry its `rehi-verify=1` label, and deletes the run state. It never kills by process name, and it never removes evidence. Run it after every attempt, failed ones included.
 
 ## Feature map
 
