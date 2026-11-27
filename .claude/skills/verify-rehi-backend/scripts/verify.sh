@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Drive an isolated Rehi API instance for verification.
-# Usage: verify.sh up | doctor | call <name> <curl args...> | sql "<query>" | mail-token <to> <verify|reset> | mail-selftest | evidence | down
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
