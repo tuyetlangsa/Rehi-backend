@@ -10,21 +10,24 @@ namespace Rehi.Application.Auth.CreateExtensionSession;
 
 public abstract class CreateExtensionSession
 {
-    public record Command : ICommand<TokenPair>;
+    /// <param name="SessionId">The refresh-token family named by the caller's access token (<c>sid</c>).</param>
+    public record Command(Guid? SessionId) : ICommand<TokenPair>;
 
     internal sealed class Handler(
         IDbContext dbContext,
-        IUserContext userContext,
         ITokenIssuer tokenIssuer,
         IDateTimeProvider clock) : ICommandHandler<Command, TokenPair>
     {
         public async Task<Result<TokenPair>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var email = userContext.Email;
-            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == email, cancellationToken);
-            if (user is null) return Result.Failure<TokenPair>(UserErrors.NotFound);
+            var now = clock.UtcNow;
+            var user = await dbContext.RefreshTokens
+                .Where(t => t.FamilyId == command.SessionId && t.RevokedAt == null && t.ExpiresAt > now)
+                .Select(t => t.User)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (user is null) return Result.Failure<TokenPair>(AuthErrors.SessionEnded);
 
-            var session = Sessions.Issue(dbContext, tokenIssuer, user, RefreshTokenClient.Extension, Guid.NewGuid(), clock.UtcNow);
+            var session = Sessions.Issue(dbContext, tokenIssuer, user, RefreshTokenClient.Extension, Guid.NewGuid(), now);
             await dbContext.SaveChangesAsync(cancellationToken);
             return session.Pair;
         }

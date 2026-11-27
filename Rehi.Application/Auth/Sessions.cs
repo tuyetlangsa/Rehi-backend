@@ -54,7 +54,7 @@ internal static class Sessions
         };
         dbContext.RefreshTokens.Add(row);
 
-        var accessToken = tokenIssuer.IssueAccessToken(user);
+        var accessToken = tokenIssuer.IssueAccessToken(user, familyId);
         return (row, new TokenPair(
             accessToken.Value,
             EpochMilliseconds(accessToken.ExpiresAt),
