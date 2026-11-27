@@ -47,7 +47,10 @@ public class SendEmailService : ISendEmailService
         {
             using var smtp = new SmtpClient();
 
-            await smtp.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+            await smtp.ConnectAsync(
+                _configuration["SendEmail:Host"] ?? "smtp.gmail.com",
+                _configuration.GetValue("SendEmail:Port", 587),
+                _configuration.GetValue("SendEmail:Security", SecureSocketOptions.StartTls));
 
             await smtp.AuthenticateAsync(smtpUser, smtpPass);
 
