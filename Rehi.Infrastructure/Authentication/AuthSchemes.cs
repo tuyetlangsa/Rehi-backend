@@ -20,14 +20,13 @@ public static class AuthSchemes
         if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return Auth0;
 
         var token = header["Bearer ".Length..].Trim();
-        if (!TokenReader.CanReadToken(token)) return Auth0;
-
         string issuer;
         try
         {
+            if (!TokenReader.CanReadToken(token)) return Auth0;
             issuer = TokenReader.ReadJsonWebToken(token).Issuer;
         }
-        catch (ArgumentException)
+        catch (Exception)
         {
             return Auth0;
         }
