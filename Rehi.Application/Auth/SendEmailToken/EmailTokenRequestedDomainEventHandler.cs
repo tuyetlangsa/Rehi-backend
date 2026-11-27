@@ -51,6 +51,11 @@ internal sealed record EmailTokenMail(string Path, TimeSpan Lifetime, string Sub
             TimeSpan.FromHours(24),
             "Verify your Rehi email",
             link => $"<p>Confirm your email address to start using Rehi.</p><p><a href=\"{link}\">{link}</a></p><p>The link expires in 24 hours.</p>"),
+        EmailTokenPurpose.ResetPassword => new EmailTokenMail(
+            "/reset-password",
+            TimeSpan.FromHours(1),
+            "Reset your Rehi password",
+            link => $"<p>Set a new password for your Rehi account.</p><p><a href=\"{link}\">{link}</a></p><p>The link expires in 1 hour. If you did not ask to reset your password, ignore this email.</p>"),
         _ => throw new ArgumentOutOfRangeException(nameof(purpose), purpose, null)
     };
 }
