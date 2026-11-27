@@ -24,12 +24,14 @@ public class Program
 
         var app = builder.Build();
 
+        app.UseForwardedHeaders();
         app.UseSwaggerWithUi();
         app.ApplyMigrations();
         app.UseCors();
         app.UseLogContext();
         app.UseSerilogRequestLogging();
         app.UseExceptionHandler();
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapEndpoints();

@@ -20,6 +20,7 @@ public class Register : IEndpoint
             })
             .WithTags("Auth")
             .AllowAnonymous()
+            .RequireRateLimiting(AuthRateLimits.Register)
             .WithName("Register");
     }
 

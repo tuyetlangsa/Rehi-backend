@@ -26,6 +26,7 @@ public class Login : IEndpoint
             })
             .WithTags("Auth")
             .AllowAnonymous()
+            .RequireRateLimiting(AuthRateLimits.Login)
             .WithName("Login");
     }
 

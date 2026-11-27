@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.HttpOverrides;
+using Rehi.Apis.Auth;
 using Rehi.Apis.Endpoints;
 using Rehi.Apis.Middleware;
 
@@ -18,6 +20,13 @@ public static class DependencyInjection
                     .AllowAnyMethod()
                     .AllowCredentials());
         });
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
+        services.AddAuthRateLimits();
         services.AddEndpoints(typeof(DependencyInjection).Assembly);
         return services;
     }

@@ -19,6 +19,7 @@ public class ResendVerification : IEndpoint
             })
             .WithTags("Auth")
             .AllowAnonymous()
+            .RequireRateLimiting(AuthRateLimits.ResendVerification)
             .WithName("ResendVerification");
     }
 
