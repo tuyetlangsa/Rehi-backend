@@ -20,7 +20,7 @@ A signed-in web client turns its Rehi access token into a separate session for t
 Preconditions:
 
 - Baseline instance is up and `doctor` is all `OK`.
-- [Native auth](./native-auth.md) ran to the end in this instance, so `verify@rehi.test` is verified and its password is `correct-horse-1`. This journey adds `RefreshTokens` rows, so run it after native-auth, whose SQL counts assume none.
+- [Native auth](./native-auth.md) ran to the end in this instance, so `verify@rehi.test` is verified and its password is `correct-horse-1`. This journey adds `RefreshTokens` rows, so run it after native-auth, whose SQL counts assume none. Start it at least 61 s after native-auth ends. Native-auth spends the minute's login budget for `127.0.0.1`, and this journey logs in once.
 - `S=.claude/skills/verify-rehi-backend/scripts/verify.sh`, `J='Content-Type: application/json'`, `E="$($S evidence)"`, and `REHI_VERIFY_TOKEN` is unset.
 - `hash_of() { echo "translate(rtrim(encode(sha256(convert_to('$1','UTF8')),'base64'),'='),'+/','-_')"; }` gives the SQL expression for a refresh token's stored hash.
 
