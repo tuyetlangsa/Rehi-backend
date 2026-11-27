@@ -12,7 +12,7 @@ public class CreateUser : IEndpoint
         app.MapPost("/users", async ([FromBody] Request request, ISender sender) =>
             {
                 var result =
-                    await sender.Send(new Application.Users.CreateUser.Command(request.Email, request.FullName));
+                    await sender.Send(new Application.Users.CreateUser.Command(request.FullName));
                 return result.MatchOk();
             })
             .WithTags("Users")
@@ -22,7 +22,6 @@ public class CreateUser : IEndpoint
 
     internal sealed class Request
     {
-        public string Email { get; set; }
         public string FullName { get; set; }
     }
 }
