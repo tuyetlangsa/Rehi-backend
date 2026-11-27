@@ -19,9 +19,21 @@ public abstract class Register
     {
         public async Task<Result> Handle(Command command, CancellationToken cancellationToken)
         {
-            if (await dbContext.Users.AnyAsync(u => u.Email.ToLower() == command.Email, cancellationToken))
-                return Result.Failure(UserErrors.EmailAlreadyExists);
+            var holders = await dbContext.Users
+                .Where(u => u.Email.ToLower() == command.Email)
+                .Select(u => u.Id)
+                .ToListAsync(cancellationToken);
 
+            return holders switch
+            {
+                [] => await Create(command, cancellationToken),
+                [var userId] => await ReplaceUnverifiedPassword(userId, command, cancellationToken),
+                _ => Result.Failure(UserErrors.EmailAlreadyExists)
+            };
+        }
+
+        private async Task<Result> Create(Command command, CancellationToken cancellationToken)
+        {
             var now = clock.UtcNow;
             var user = new User
             {
@@ -45,6 +57,27 @@ public abstract class Register
                 if (!await dbContext.Users.AnyAsync(u => u.Email == command.Email, cancellationToken)) throw;
                 return Result.Failure(UserErrors.EmailAlreadyExists);
             }
+        }
+
+        private Task<Result> ReplaceUnverifiedPassword(Guid userId, Command command,
+            CancellationToken cancellationToken)
+        {
+            var passwordHash = passwordHasher.Hash(command.Password);
+            return dbContext.InSerializableTransactionAsync(async () =>
+            {
+                var user = await dbContext.Users.SingleAsync(u => u.Id == userId, cancellationToken);
+                if (user is not { PasswordHash: not null, EmailVerifiedAt: null })
+                    return Result.Failure(UserErrors.EmailAlreadyExists);
+
+                var now = clock.UtcNow;
+                user.PasswordHash = passwordHash;
+                user.FullName = command.FullName;
+                await PendingEmailTokens.VoidAsync(dbContext, user.Id, EmailTokenPurpose.VerifyEmail, now,
+                    cancellationToken);
+                user.Raise(new EmailTokenRequestedDomainEvent(user.Id, EmailTokenPurpose.VerifyEmail));
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return Result.Success();
+            }, cancellationToken);
         }
     }
 

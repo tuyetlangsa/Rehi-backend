@@ -23,10 +23,7 @@ public class EmailTokenRequestedDomainEventHandler(
         var mail = EmailTokenMail.For(domainEvent.Purpose);
         var now = clock.UtcNow;
 
-        var older = await dbContext.EmailTokens
-            .Where(t => t.UserId == user.Id && t.Purpose == domainEvent.Purpose && t.ConsumedAt == null)
-            .ToListAsync(cancellationToken);
-        foreach (var token in older) token.ConsumedAt = now;
+        await PendingEmailTokens.VoidAsync(dbContext, user.Id, domainEvent.Purpose, now, cancellationToken);
 
         var emailToken = OpaqueToken.Create();
         dbContext.EmailTokens.Add(new EmailToken
