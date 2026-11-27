@@ -14,23 +14,24 @@ public abstract class VerifyEmail
 
     internal sealed class Handler(IDbContext dbContext, IDateTimeProvider clock) : ICommandHandler<Command>
     {
-        public async Task<Result> Handle(Command command, CancellationToken cancellationToken)
-        {
-            var now = clock.UtcNow;
-            var hash = OpaqueToken.HashOf(command.Token);
-            var token = await dbContext.EmailTokens
-                .Include(t => t.User)
-                .SingleOrDefaultAsync(t => t.TokenHash == hash && t.Purpose == EmailTokenPurpose.VerifyEmail,
-                    cancellationToken);
+        public Task<Result> Handle(Command command, CancellationToken cancellationToken) =>
+            dbContext.InSerializableTransactionAsync(async () =>
+            {
+                var now = clock.UtcNow;
+                var hash = OpaqueToken.HashOf(command.Token);
+                var token = await dbContext.EmailTokens
+                    .Include(t => t.User)
+                    .SingleOrDefaultAsync(t => t.TokenHash == hash && t.Purpose == EmailTokenPurpose.VerifyEmail,
+                        cancellationToken);
 
-            if (token is null || token.ConsumedAt is not null || token.ExpiresAt <= now)
-                return Result.Failure(AuthErrors.InvalidEmailToken);
+                if (token is null || token.ConsumedAt is not null || token.ExpiresAt <= now)
+                    return Result.Failure(AuthErrors.InvalidEmailToken);
 
-            token.ConsumedAt = now;
-            token.User.EmailVerifiedAt ??= now;
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return Result.Success();
-        }
+                token.ConsumedAt = now;
+                token.User.EmailVerifiedAt ??= now;
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return Result.Success();
+            }, cancellationToken);
     }
 
     internal sealed class Validator : AbstractValidator<Command>
