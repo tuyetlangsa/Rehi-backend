@@ -34,8 +34,17 @@ public abstract class Register
             };
             user.Raise(new EmailTokenRequestedDomainEvent(user.Id, EmailTokenPurpose.VerifyEmail));
             dbContext.Users.Add(user);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return Result.Success();
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return Result.Success();
+            }
+            catch (DbUpdateException)
+            {
+                // IX_Users_Email rejected the insert because a concurrent register of this email committed first.
+                if (!await dbContext.Users.AnyAsync(u => u.Email == command.Email, cancellationToken)) throw;
+                return Result.Failure(UserErrors.EmailAlreadyExists);
+            }
         }
     }
 
