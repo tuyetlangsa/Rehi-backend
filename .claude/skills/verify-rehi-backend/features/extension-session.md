@@ -8,6 +8,8 @@ A signed-in web client turns its Rehi access token into a separate session for t
 - `ext-session-ended`: every Rehi access token carries a `sid` claim, the refresh-token family it was issued with. `extension-session` mints only while that family still has an unrevoked, unexpired row, so an access token issued before a logout or a password reset answers `401` `Auth.SessionEnded` and adds no row.
 - `ext-refresh` rotates the extension refresh token through the normal `POST /auth/refresh`, and the successor keeps `Client = Extension`.
 - `auth0-exchange` finds the user by the Auth0 token's `email` claim, case-insensitively, or creates one, then issues a web pair (`POST /auth/auth0-exchange`, no body, `Auth0Token` policy). It never reads an email from the body. A token whose `email_verified` claim is present and not `true` answers `403` `Auth.EmailNotVerified`.
+- `auth0-claim`: when the row it finds has no `EmailVerifiedAt`, the exchange clears its `PasswordHash` and voids its pending verify links, so a password someone registered without owning the address never becomes live.
+- `auth0-first-exchange-race`: concurrent first exchanges of one new email create one `Users` row, and each one gets a web pair.
 - `pin-rehi-only` and `pin-auth0-only`: a token of the other kind, or no token, answers `401`.
 
 ## How to get to it (user POV)
@@ -35,7 +37,7 @@ Preconditions:
 - **No token.** Run `$S call ext-session-anon -X POST /auth/extension-session`. Status `401`.
 - **Rehi token on the exchange.** Count the rows with `$S sql 'select (select count(*) from "Users"), (select count(*) from "RefreshTokens")'`, then run `REHI_VERIFY_TOKEN="$WEB" $S call exchange-rehi-token -X POST /auth/auth0-exchange`. Status `401`, and `exchange-rehi-token.headers` holds `WWW-Authenticate: Bearer`. `api.log` shows `Auth0 was not authenticated` with `IDX10500` for this request, which proves the policy sent the Rehi token to the `Auth0` scheme. The same count prints the same numbers.
 - **No token on the exchange.** Run `$S call exchange-anon -X POST /auth/auth0-exchange`. Status `401`.
-- **Auth0 token on the exchange.** BLOCKED. The verify instance cannot mint an Auth0 token. The dev checks it in W1's live box: sign in through Auth0 and see one `RefreshTokens` row with `Client = 0` for that user, and no second `Users` row for an email that differs only in case.
+- **Auth0 token on the exchange.** BLOCKED. The verify instance cannot mint an Auth0 token. The dev checks it in W1's live box: sign in through Auth0 and see one `RefreshTokens` row with `Client = 0` for that user, and no second `Users` row for an email that differs only in case. For a squatted address, register it with a password first, then sign in through Auth0: the row's `PasswordHash` is null, its verify link answers `400`, and the squatter's password answers `401`. `auth0-claim` and `auth0-first-exchange-race` were proven only by sending `ExchangeAuth0.Command` through MediatR from a console host on the verify database, which skips the Auth0 bearer check.
 - **Proof.** The evidence holds every `.status` and `.body` above, and the SQL reads saved as `<name>.sql.txt`.
 
 ## Gotchas

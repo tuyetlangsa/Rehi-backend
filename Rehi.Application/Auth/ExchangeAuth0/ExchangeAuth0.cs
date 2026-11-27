@@ -24,23 +24,47 @@ public abstract class ExchangeAuth0
 
             var email = Emails.Normalize(command.Email);
             var now = clock.UtcNow;
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email, cancellationToken);
-            if (user is null)
+            var user = await Find(email, cancellationToken) ?? await Create(email, command.Name, now, cancellationToken);
+            if (user.EmailVerifiedAt is null)
             {
-                user = new User
-                {
-                    Id = Guid.NewGuid(),
-                    Email = email,
-                    FullName = string.IsNullOrWhiteSpace(command.Name) ? email.Split('@')[0] : command.Name.Trim(),
-                    CreateAt = now,
-                    ScheduleTime = now
-                };
-                dbContext.Users.Add(user);
+                // Whoever set a password on this unverified row never proved they own the address. Auth0 did.
+                user.PasswordHash = null;
+                await PendingEmailTokens.VoidAsync(dbContext, user.Id, EmailTokenPurpose.VerifyEmail, now,
+                    cancellationToken);
             }
 
             var session = Sessions.Issue(dbContext, tokenIssuer, user, RefreshTokenClient.Web, Guid.NewGuid(), now);
             await dbContext.SaveChangesAsync(cancellationToken);
             return session.Pair;
+        }
+
+        private Task<User?> Find(string email, CancellationToken cancellationToken) =>
+            dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email, cancellationToken);
+
+        private async Task<User> Create(string email, string? name, DateTime now, CancellationToken cancellationToken)
+        {
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = email,
+                FullName = string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name.Trim(),
+                CreateAt = now,
+                ScheduleTime = now
+            };
+            dbContext.Users.Add(user);
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return user;
+            }
+            catch (DbUpdateException)
+            {
+                // IX_Users_Email rejected the insert because a concurrent first exchange of this email committed first.
+                // Remove detaches the failed insert, so the session save below does not retry it.
+                dbContext.Users.Remove(user);
+                if (await Find(email, cancellationToken) is { } winner) return winner;
+                throw;
+            }
         }
     }
 
