@@ -165,6 +165,12 @@ public static class DependencyInjection
             })
             .AddJwtBearer(AuthSchemes.Rehi, _ => { });
 
+        services.AddAuthorizationBuilder()
+            .AddPolicy(AuthPolicies.RehiToken, policy =>
+                policy.AddAuthenticationSchemes(AuthSchemes.Rehi).RequireAuthenticatedUser())
+            .AddPolicy(AuthPolicies.Auth0Token, policy =>
+                policy.AddAuthenticationSchemes(AuthSchemes.Auth0).RequireAuthenticatedUser());
+
         services.AddOptions<JwtBearerOptions>(AuthSchemes.Rehi)
             .Configure<IOptions<RehiJwtOptions>>((options, rehi) =>
                 options.TokenValidationParameters = new TokenValidationParameters
