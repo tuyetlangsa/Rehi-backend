@@ -64,4 +64,4 @@ Preconditions:
 - The rate limiter keys on the TCP peer address. Every verify call comes from `127.0.0.1`, so the whole journey shares one budget per endpoint, and `X-Forwarded-For` does not reset it. Wait 61 s before a step that needs a fresh minute. Failed logins and rejected registers count toward the limit too. To check the proxy setting, start the instance with `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true $S up`, and each new `X-Forwarded-For` then gets its own budget.
 - A squatter who registers again after the victim, and before the victim opens the link, replaces the password again and voids the victim's link. The newest email in the victim's inbox then carries the squatter's password. Login with the victim's password then answers `401`, and the victim recovers through forgot-password.
 - `up` passes a random `Jwt__Secret` on every run, so a token from an earlier run answers `401`.
-- `/auth/*` endpoints ignore `REHI_VERIFY_TOKEN`, so it is safe to leave it exported for the rest of the journey.
+- The `/auth/*` endpoints in this journey ignore `REHI_VERIFY_TOKEN`, so it is safe to leave it exported for the rest of the journey.

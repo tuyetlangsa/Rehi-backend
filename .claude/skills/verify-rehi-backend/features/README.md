@@ -35,3 +35,4 @@ Each feature file starts with an H1 title and one paragraph on the client-visibl
 - [Save an article](./save-article.md): saving or fetching an article by URL, and reading it back through state sync. Needs the native-auth token.
 - [Tags](./tags.md): creating a tag, assigning it to an article, and deleting it. Needs the native-auth token.
 - [Highlights](./highlights.md): creating a highlight on a saved article, adding a note, and deleting it. Needs the native-auth token.
+- [Extension session and Auth0 exchange](./extension-session.md): minting an extension session from a Rehi token and refreshing it, and the one-token-kind pin on both endpoints. Runnable after native-auth. The Auth0 exchange with a real Auth0 token is BLOCKED locally.
