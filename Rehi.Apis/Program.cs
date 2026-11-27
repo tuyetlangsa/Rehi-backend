@@ -24,7 +24,6 @@ public class Program
 
         var app = builder.Build();
 
-        app.UseForwardedHeaders();
         app.UseSwaggerWithUi();
         app.ApplyMigrations();
         app.UseCors();

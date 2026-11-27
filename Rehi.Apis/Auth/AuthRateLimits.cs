@@ -19,6 +19,8 @@ public static class AuthRateLimits
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            // RemoteIpAddress is the TCP peer. X-Forwarded-For rewrites it only when the deployment sets
+            // ASPNETCORE_FORWARDEDHEADERS_ENABLED=true, which an app behind Azure App Service must do.
             foreach (var (policy, permitsPerMinute) in Policies)
                 options.AddPolicy(policy, context => RateLimitPartition.GetFixedWindowLimiter(
                     context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
