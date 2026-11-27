@@ -28,4 +28,6 @@ public interface IDbContext
     DbSet<EmailToken> EmailTokens { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    Task<T> InSerializableTransactionAsync<T>(Func<Task<T>> work, CancellationToken cancellationToken = default);
 }

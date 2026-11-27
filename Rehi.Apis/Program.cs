@@ -30,6 +30,7 @@ public class Program
         app.UseLogContext();
         app.UseSerilogRequestLogging();
         app.UseExceptionHandler();
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapEndpoints();

@@ -1,3 +1,4 @@
+using Rehi.Apis.Auth;
 using Rehi.Apis.Endpoints;
 using Rehi.Apis.Middleware;
 
@@ -18,6 +19,7 @@ public static class DependencyInjection
                     .AllowAnyMethod()
                     .AllowCredentials());
         });
+        services.AddAuthRateLimits();
         services.AddEndpoints(typeof(DependencyInjection).Assembly);
         return services;
     }

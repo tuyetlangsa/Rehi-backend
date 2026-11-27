@@ -17,9 +17,9 @@ A signed-in user creates tags, assigns one to a saved article, and deletes a tag
 Preconditions:
 
 - [Save an article](./save-article.md) ran through **Sync** in this instance, with the same token.
-- **BLOCKED until a token source exists**, as for that journey.
+- `REHI_VERIFY_TOKEN` holds the [Native auth](./native-auth.md) access token, as for that journey.
 
-- **Create.** Run `scripts/verify.sh call tag-create -X POST -H 'Content-Type: application/json' -d '{"name":"verify-tag","createAt":1795000001000}' /tags`. Status `200`. `scripts/verify.sh sql 'select "Name" from "Tags"'` prints `verify-tag`.
+- **Create.** Run `scripts/verify.sh call tag-create -X POST -H 'Content-Type: application/json' -d '{"name":"verify-tag","createAt":1795000001000}' /tags`. Status `201`, and `data` is the new tag id. `scripts/verify.sh sql 'select "Name" from "Tags"'` prints `verify-tag`.
 - **Assign.** Read the request shape from `Rehi.Apis/Articles/AssignArticleTag.cs`, then call `/articles/assign-tag` with the saved article id and `verify-tag`. Status `200`. `scripts/verify.sh sql 'select count(*) from "ArticleTags"'` prints `1`.
 - **Delete.** Run `scripts/verify.sh call tag-delete -X DELETE /tags/verify-tag/1795000002000`. Status `200`. `scripts/verify.sh sql 'select "Name","IsDeleted" from "Tags"'` prints `verify-tag|t`.
 - **Proof.** Save each call plus each SQL read.

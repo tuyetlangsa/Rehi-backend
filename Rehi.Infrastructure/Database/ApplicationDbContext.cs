@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Data;
 using Rehi.Domain.Articles;
@@ -32,4 +33,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<FlashCardReview> FlashCardReviews { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<EmailToken> EmailTokens { get; set; }
+
+    public Task<T> InSerializableTransactionAsync<T>(Func<Task<T>> work, CancellationToken cancellationToken = default)
+    {
+        return Database.CreateExecutionStrategy().ExecuteAsync(async ct =>
+        {
+            ChangeTracker.Clear();
+            await using var transaction = await Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            var result = await work();
+            await transaction.CommitAsync(ct);
+            return result;
+        }, cancellationToken);
+    }
 }
