@@ -85,7 +85,8 @@ public abstract class Register
     {
         public Validator()
         {
-            RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
+            RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256)
+                .Must(Emails.IsBareAddress).WithMessage("Email must be a plain address such as name@example.com.");
             RuleFor(x => x.Password).NotEmpty().Length(8, 128);
             RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
         }
