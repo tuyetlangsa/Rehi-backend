@@ -12,7 +12,7 @@ internal sealed class TokenIssuer(IOptions<RehiJwtOptions> options, IDateTimePro
     private readonly JsonWebTokenHandler _handler = new();
     private readonly SigningCredentials _credentials = new(options.Value.SigningKey(), SecurityAlgorithms.HmacSha256);
 
-    public AccessToken IssueAccessToken(User user)
+    public AccessToken IssueAccessToken(User user, Guid sessionId)
     {
         var now = clock.UtcNow;
         var expiresAt = now.AddMinutes(options.Value.ExpirationInMinutes);
@@ -28,7 +28,8 @@ internal sealed class TokenIssuer(IOptions<RehiJwtOptions> options, IDateTimePro
             {
                 ["sub"] = user.Id.ToString(),
                 ["email"] = user.Email,
-                ["name"] = user.FullName
+                ["name"] = user.FullName,
+                ["sid"] = sessionId.ToString()
             },
             SigningCredentials = _credentials
         });

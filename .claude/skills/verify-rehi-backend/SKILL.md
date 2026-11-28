@@ -76,7 +76,7 @@ Timestamps in request bodies (`createAt`, `updateAt` and the route segments with
 
 ### Authentication
 
-Every endpoint except `/payos/webhook`, `/paypal/webhook`, and `/auth/*` calls `RequireAuthorization()`. The API resolves the caller by the token's email claim and looks that email up in `Users`. It accepts two token kinds. A Rehi access token is an HS256 JWT that this instance issues at `POST /auth/login`. An Auth0 access token comes from the web app's Auth0 sign-in, and this skill cannot mint one.
+Every endpoint except `/payos/webhook`, `/paypal/webhook`, and the signed-out `/auth/*` endpoints calls `RequireAuthorization()`. `POST /auth/extension-session` accepts only a Rehi token and `POST /auth/auth0-exchange` only an Auth0 token ([Extension session](features/extension-session.md)). The API resolves the caller by the token's email claim and looks that email up in `Users`. It accepts two token kinds. A Rehi access token is an HS256 JWT that this instance issues at `POST /auth/login`. An Auth0 access token comes from the web app's Auth0 sign-in, and this skill cannot mint one.
 
 Get a token from the [Native auth](features/native-auth.md) journey. It registers `verify@rehi.test`, reads the verification link from Mailpit, signs in, and exports `REHI_VERIFY_TOKEN`. Every authenticated journey in `features/` runs with that token. A path that needs an Auth0 token is unverifiable here. Report it as unverifiable, with the journey name. Do not work around it with a test-only endpoint, a relaxed auth scheme, or a hand-forged JWT.
 

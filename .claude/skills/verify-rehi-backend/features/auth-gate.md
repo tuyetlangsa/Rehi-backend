@@ -1,6 +1,6 @@
 # Auth gate
 
-Every client route requires a bearer token, and a call without one gets `401` before any handler runs. The API accepts two token kinds. It sends a token whose `iss` is `Jwt:Issuer` to the `Rehi` scheme and every other token to the `Auth0` scheme, and each scheme validates the token fully. The payment webhooks and the `/auth/*` endpoints are the deliberate exceptions: payOS and PayPal call the webhooks without a token, and a signed-out client calls `/auth/*`.
+Every client route requires a bearer token, and a call without one gets `401` before any handler runs. The API accepts two token kinds. It sends a token whose `iss` is `Jwt:Issuer` to the `Rehi` scheme and every other token to the `Auth0` scheme, and each scheme validates the token fully. The payment webhooks and the signed-out `/auth/*` endpoints are the deliberate exceptions: payOS and PayPal call the webhooks without a token, and a signed-out client calls `/auth/*`. `/auth/extension-session` and `/auth/auth0-exchange` require a token of one kind each, covered in [Extension session](./extension-session.md).
 
 ## Sub-features
 
