@@ -70,7 +70,7 @@ $S sql 'select "Id","Email" from "Users"'
 $S sql 'select count(*) from "Articles"'
 ```
 
-Use `sql` only to observe. Seeding state must go through the API, the same path a user takes.
+Use `sql` only to observe. Seeding state must go through the API, the same path a user takes. The one exception is the passwordless row an Auth0 sign-in creates: `POST /users` creates only the caller's own row, so without an Auth0 token the journeys insert that row with `sql`.
 
 Timestamps in request bodies (`createAt`, `updateAt` and the route segments with those names) are Unix epoch milliseconds.
 
@@ -91,7 +91,7 @@ $S mail-token user@example.com reset    # token from {Rehi:WebBaseUrl}/reset-pas
 
 It prints only the token, so `TOKEN="$($S mail-token ...)"` feeds the next `call`. It saves the message JSON as `mail-<kind>-<to>.json` in the evidence directory. It fails when the address has no email or the newest one has no link of that kind. Browse the inbox at `http://127.0.0.1:58025`.
 
-`$S mail-selftest` sends one message over SMTP with both link shapes to a fresh address and checks that `mail-token` reads both tokens back. Register and resend-verification send verify emails through the outbox, so a verify link lands within about 5 s. No endpoint sends reset emails yet, so `mail-token ... reset` is proven only against the self-test message.
+`$S mail-selftest` sends one message over SMTP with both link shapes to a fresh address and checks that `mail-token` reads both tokens back. Register and resend-verification send verify emails through the outbox, so a verify link lands within about 5 s. Forgot-password sends reset emails the same way (see [Password reset](features/password-reset.md)).
 
 ## Evidence
 

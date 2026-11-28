@@ -13,7 +13,7 @@ This directory is the maintained source for verifying what Rehi API clients (the
 
 - Start every journey from the baseline unless its preconditions say otherwise.
 - Drive with `scripts/verify.sh call <name> ...`, one evidence name per user action.
-- Seed through the API only. `scripts/verify.sh sql` is for reading.
+- Seed through the API only. `scripts/verify.sh sql` is for reading. The one exception is the passwordless Auth0-style row, which needs an Auth0 token to create through the API (see [Password reset](./password-reset.md), Gotchas).
 - Timestamps in bodies and routes are Unix epoch milliseconds.
 
 ## Proof and skip reporting
@@ -32,6 +32,7 @@ Each feature file starts with an H1 title and one paragraph on the client-visibl
 - [API boot and schema](./api-boot.md): startup from an empty database, migrations, and the Swagger contract. Runnable now.
 - [Auth gate](./auth-gate.md): protected routes reject anonymous calls and forged tokens, accept Rehi tokens, and webhooks stay anonymous. Runnable now.
 - [Native auth](./native-auth.md): register, verify email, login, refresh rotation and reuse, logout, and rate limits. Runnable now, and the token source for the journeys below.
+- [Password reset](./password-reset.md): forgot password, the emailed reset link, reset revoking every session, and an Auth0-style user setting a first password. Runnable now.
 - [Save an article](./save-article.md): saving or fetching an article by URL, and reading it back through state sync. Needs the native-auth token.
 - [Tags](./tags.md): creating a tag, assigning it to an article, and deleting it. Needs the native-auth token.
 - [Highlights](./highlights.md): creating a highlight on a saved article, adding a note, and deleting it. Needs the native-auth token.

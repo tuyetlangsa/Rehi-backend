@@ -1,5 +1,4 @@
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using Rehi.Application.Abstraction.Authentication;
 using Rehi.Application.Abstraction.Clock;
 using Rehi.Application.Abstraction.Data;
@@ -19,17 +18,19 @@ public abstract class Login
         ITokenIssuer tokenIssuer,
         IDateTimeProvider clock) : ICommandHandler<Command, TokenPair>
     {
-        public async Task<Result<TokenPair>> Handle(Command command, CancellationToken cancellationToken)
-        {
-            var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Email == command.Email, cancellationToken);
-            var passwordMatches = passwordHasher.Verify(user?.PasswordHash, command.Password);
-            if (user is null || !passwordMatches) return Result.Failure<TokenPair>(AuthErrors.InvalidCredentials);
-            if (user.EmailVerifiedAt is null) return Result.Failure<TokenPair>(AuthErrors.EmailNotVerified);
+        public Task<Result<TokenPair>> Handle(Command command, CancellationToken cancellationToken) =>
+            dbContext.InSerializableTransactionAsync(async () =>
+            {
+                var user = await Emails.FindUserAsync(dbContext, command.Email, cancellationToken);
+                var passwordMatches = passwordHasher.Verify(user?.PasswordHash, command.Password);
+                if (user is null || !passwordMatches) return Result.Failure<TokenPair>(AuthErrors.InvalidCredentials);
+                if (user.EmailVerifiedAt is null) return Result.Failure<TokenPair>(AuthErrors.EmailNotVerified);
 
-            var session = Sessions.Issue(dbContext, tokenIssuer, user, command.Client!.Value, Guid.NewGuid(), clock.UtcNow);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return session.Pair;
-        }
+                var session = Sessions.Issue(dbContext, tokenIssuer, user, command.Client!.Value, Guid.NewGuid(),
+                    clock.UtcNow);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return session.Pair;
+            }, cancellationToken);
     }
 
     internal sealed class Validator : AbstractValidator<Command>
